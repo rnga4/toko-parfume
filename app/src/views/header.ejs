@@ -11,16 +11,25 @@
   *{box-sizing:border-box}
   :root{color-scheme:light}
   body{font-family:system-ui,sans-serif;margin:0;background:#f5f5f7;color:#222;-webkit-text-size-adjust:100%}
-  nav{background:#1f1f2e;position:sticky;top:0;z-index:10}
-  .navrow{display:flex;gap:8px;padding:0 8px;overflow-x:auto}
-  .bottombar{display:none}
+  nav{background:#1f1f2e;position:sticky;top:0;z-index:10;display:flex;align-items:center;gap:4px;padding:0 8px;min-height:52px}
+  .navtoggle{position:absolute;left:4px;top:4px;width:44px;height:44px;margin:0;padding:0;border:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;z-index:12}
+  .navtoggle:focus-visible{outline:3px solid #fff;outline-offset:2px}
+  .burger{display:flex;align-items:center;gap:6px;min-height:44px;padding:0 10px;color:#fff;font-size:16px;cursor:pointer;position:relative;z-index:12;border-radius:8px;white-space:nowrap}
+  .burger .ico{font-size:20px;line-height:1}
+  .navtoggle:checked ~ .burger .ico-open{display:none}
+  .navtoggle:not(:checked) ~ .burger .ico-close{display:none}
+  .brand{color:#fff;font-size:16px;font-weight:600;padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .scrim{display:none}
+  .navtoggle:checked ~ .scrim{display:block;position:fixed;inset:0;background:#0009;z-index:5}
+  .sidebar{display:none}
+  .navtoggle:checked ~ .sidebar{display:flex;flex-direction:column;gap:2px;position:fixed;top:0;left:0;bottom:0;width:min(82vw,300px);background:#1f1f2e;border-right:1px solid #0006;padding:56px 8px 12px;z-index:11;overflow-y:auto}
+  .sidebar a,.sidebar button{display:flex;align-items:center;color:#fff;text-decoration:none;padding:14px 12px;white-space:nowrap;min-height:48px;border-radius:8px}
+  .sidebar form{margin:0;width:100%}
+  .sidebar button{width:100%;text-align:left;justify-content:flex-start;background:none;border:0;font:inherit;font-size:16px;cursor:pointer}
+  .sidebar a:active,.sidebar button:active{background:#161624}
   nav a,nav button{color:#fff;text-decoration:none;padding:14px 12px;white-space:nowrap}
-  nav a{display:block}
   nav form{margin:0}
   nav button{background:none;border:0;font:inherit;font-size:16px;cursor:pointer;min-height:44px}
-  summary{list-style:none;cursor:pointer}
-  summary::-webkit-details-marker{display:none}
-  summary:focus-visible{outline:3px solid #fff;outline-offset:-3px}
   main{max-width:1000px;margin:16px auto;padding:0 12px}
   h2{margin:8px 0 12px}
   h3{margin:0 0 12px;font-size:16px}
@@ -75,25 +84,7 @@
   a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #1f1f2e;outline-offset:2px}
   nav a:focus-visible,nav button:focus-visible{outline-color:#fff}
   button,.btn,input,select,nav a,nav button{transition:background-color .15s ease,color .15s ease,outline-color .15s ease}
-  @media (min-width:900px) and (max-width:1140px){
-    .navrow{gap:4px}
-    .navrow a,.navrow button{padding:14px 8px}
-  }
-  @media (max-width:899px){
-    .navrow{display:none}
-    .bottombar{display:flex;align-items:stretch;position:fixed;left:0;right:0;bottom:0;z-index:10;background:#1f1f2e;padding:0 4px env(safe-area-inset-bottom)}
-    .bottombar a,.bottombar>form button{display:flex;align-items:center;justify-content:center;text-align:center;flex:1 1 0;min-width:0;min-height:52px;padding:0 6px;font-size:14px;white-space:nowrap}
-    .bottombar>form{display:flex;flex:1 1 0;margin:0}
-    .bottombar>form button{width:100%}
-    .menu{position:relative;flex:0 0 auto;display:flex}
-    .menu>summary{display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;padding:0 14px;min-height:52px;white-space:nowrap}
-    .menu[open]>summary{background:#161624}
-    .drawer{position:absolute;right:0;bottom:100%;margin-bottom:6px;width:min(70vw,240px);background:#1f1f2e;border:1px solid #0004;border-radius:10px;padding:4px;display:flex;flex-direction:column}
-    .drawer a{display:flex;align-items:center;min-height:44px;padding:12px 10px;border-radius:8px}
-    .drawer form{margin:0}
-    .drawer form button{width:100%;text-align:left;min-height:44px;padding:12px 10px;border-radius:8px}
-    main{padding-bottom:calc(76px + env(safe-area-inset-bottom))}
-  }
+  .burger{transition:background-color .15s ease}
   @media (min-width:700px){
     .grid{grid-template-columns:2fr 1fr 1fr 1fr}
     .grid-split{grid-template-columns:2fr 1fr}
@@ -112,14 +103,18 @@
     .sums .total dd{font-size:24px}
   }
   @media (prefers-reduced-motion:reduce){
-    button,.btn,input,select,nav a,nav button{transition:none}
+    button,.btn,input,select,nav a,nav button,.burger{transition:none}
   }
 </style>
 </head>
 <body>
 <% if (user) { %>
 <nav>
-  <div class="navrow">
+  <input type="checkbox" id="navtoggle" class="navtoggle">
+  <label for="navtoggle" class="burger"><span class="ico ico-open" aria-hidden="true">☰</span><span class="ico ico-close" aria-hidden="true">✕</span>Menu</label>
+  <span class="brand">ERP Toko Parfum</span>
+  <label for="navtoggle" class="scrim" aria-hidden="true"></label>
+  <div class="sidebar">
     <a href="/">Dashboard</a>
     <a href="/kasir">Kasir</a>
     <a href="/sales">Riwayat</a>
@@ -136,34 +131,6 @@
       <input type="hidden" name="_csrf" value="<%= csrf %>">
       <button type="submit">Keluar</button>
     </form>
-  </div>
-  <div class="bottombar">
-    <a href="/">Dashboard</a>
-    <a href="/kasir">Kasir</a>
-    <a href="/sales">Riwayat</a>
-    <a href="/products">Produk</a>
-    <% if (user.role === 'admin') { %>
-    <details class="menu">
-      <summary>Menu</summary>
-      <div class="drawer">
-        <a href="/purchases">Pembelian</a>
-        <a href="/suppliers">Supplier</a>
-        <a href="/returns">Retur</a>
-        <a href="/decants">Decant</a>
-        <a href="/opnames">Opname</a>
-        <a href="/users">Akun</a>
-        <form method="post" action="/logout">
-          <input type="hidden" name="_csrf" value="<%= csrf %>">
-          <button type="submit">Keluar</button>
-        </form>
-      </div>
-    </details>
-    <% } else { %>
-    <form method="post" action="/logout">
-      <input type="hidden" name="_csrf" value="<%= csrf %>">
-      <button type="submit">Keluar</button>
-    </form>
-    <% } %>
   </div>
 </nav>
 <% } %>

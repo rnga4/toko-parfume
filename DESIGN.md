@@ -72,11 +72,9 @@ Setiap tampilan data punya tiga keadaan. Kosong menyebabkan sebab dan satu aksi.
 
 ## Navigasi dan peran (R-24)
 
-Di layar 900px ke atas navigasi tetap satu baris nav lengket: Dashboard, Kasir, Riwayat, Produk, lalu Pembelian, Supplier, Retur, Decant, Opname, Akun khusus admin, dan tombol Keluar di ujung. Rentang 900-1140px memakai padding baris yang lebih rapat supaya sebelas item itu muat tanpa scroll, karena layar tablet justru paling rawan melihat baris terpotong.
+Navigasi memakai satu bar atas tipis setinggi 52px di seluruh ukuran layar: tombol Menu (☰, berlabel, bukan ikon kosong) di kiri dan nama aplikasi di sebelahnya. Menu adalah checkbox yang dihidupkan lewat `<details>`-style label: satu tekan membuka sidebar kiri setinggi layar, lebar `min(82vw, 300px)`, memuat Dashboard, Kasir, Riwayat, Produk, lalu Pembelian, Supplier, Retur, Decant, Opname, Akun khusus admin, dan Keluar. Di luar sidebar ada lapisan gelap yang kalau diklik menutup sidebar, tombol berubah dari ☰ jadi ✕ selama terbuka, dan semua tautan tetap bisa dicapai dengan Tab tanpa satu baris JavaScript pun. Tanpa JS, Escape tidak menutup sidebar; tekan Menu atau lapisan gelap sebagai gantinya.
 
-Di bawah 900px baris atas diganti bar bawah tetap setinggi 52px: empat tujuan utama (Dashboard, Kasir, Riwayat, Produk) dan, untuk admin, item Menu. Menu memakai `<details>`: satu tekan membuka drawer ke atas berisi enam menu admin dan Keluar, tekan lagi menutup, semuanya tanpa JavaScript. Konten utama diberi padding bawah 76px plus safe-area supaya baris terakhir tidak tertutup bar. Pilihan baris bawah, bukan hamburger di atas, alasannya jangkauan jempol dan hilangnya kebiasaan nav horizontal yang meluber di HP; tombol di atas hanya menyisakan kekosongan.
-
-Kasir sengaja tidak melihat enam menu admin. Bukan karena disembunyikan, melainkan karena pekerjaannya tidak sampai ke sana, dan setiap menu tambahan adalah peluang salah tekan saat toko ramai. Di baris bawah itu berarti Kasir tidak membutuhkan Menu sama sekali: Keluar duduk sebagai tab kelima, selesai.
+Pilihan sidebar kiri, bukan baris horizontal yang meluber di HP maupun bar bawah, alasannya konsistensi satu pola untuk semua layar dan ruang konten yang utuh di kedua sisi. Kasir sengaja tidak melihat enam menu admin. Bukan karena disembunyikan, melainkan karena pekerjaannya tidak sampai ke sana, dan setiap menu tambahan adalah peluang salah tekan saat toko ramai.
 
 Seluruh aplikasi berada di belakang halaman Masuk. Tanpa sesi, `/` langsung dilempar ke `/login`. Halaman admin memakai penjaga terpisah yang mengembalikan 403, bukan 404, supaya jelas halaman itu memang ada tetapi bukan untuk peran itu.
 
