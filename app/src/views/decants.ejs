@@ -1,0 +1,72 @@
+<%- include('header') %>
+<h2>Decant</h2>
+<% if (error) { %>
+<div class="alert" role="alert"><%= error %></div>
+<% } %>
+<% if (flash) { %>
+<div class="flash" role="status"><%= flash %></div>
+<% } %>
+
+<div class="card">
+  <h3>Buat decant</h3>
+  <% if (!parents.length || !children.length) { %>
+  <% if (!children.length) { %>
+  <p class="state">Belum ada produk kategori Decant. Buat dulu di halaman Produk, dengan kategori Decant dan induk yang sudah dipilih.</p>
+  <a class="btn" href="/products">Buka daftar produk</a>
+  <% } else { %>
+  <p class="state">Tidak ada botol induk yang masih punya sisa isi. Pembelian baru dulu lewat halaman Pembelian.</p>
+  <a class="btn" href="/purchases">Buka Pembelian</a>
+  <% } %>
+  <% } else { %>
+  <form method="post" action="/decants">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-grid">
+      <select name="parent_id" aria-label="Produk induk">
+        <% parents.forEach(p => { %>
+        <option value="<%= p.id %>"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml, sisa <%= p.ml_left %>ml</option>
+        <% }) %>
+      </select>
+      <select name="child_id" aria-label="Produk decant">
+        <% children.forEach(c => { %>
+        <option value="<%= c.id %>"><%= c.brand %> <%= c.name %> <%= c.size_ml %>ml, stok <%= c.stock %><%= c.parent_id ? '' : ' (belum ditautkan)' %></option>
+        <% }) %>
+      </select>
+      <input name="qty" type="number" aria-label="Jumlah decant" inputmode="numeric" min="1" value="1" required>
+      <button>Buat decant</button>
+    </div>
+  </form>
+  <% } %>
+</div>
+
+<div class="card">
+  <h3>Riwayat decant</h3>
+  <% if (!history.length) { %>
+  <p class="state">Belum ada decant yang dibuat. Setiap kali dibuat, sisa isi botol induk dicatat di sini.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Waktu</th>
+        <th scope="col">Induk</th>
+        <th scope="col">Decant</th>
+        <th scope="col" class="num">Jumlah</th>
+        <th scope="col" class="num">Botol habis</th>
+        <th scope="col">Oleh</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% history.forEach(h => { %>
+      <tr>
+        <td data-label="Waktu" class="muted"><%= new Date(h.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></td>
+        <td data-label="Induk"><%= h.parent_brand %> <%= h.parent_name %> <%= h.parent_size %>ml</td>
+        <td data-label="Decant"><%= h.child_brand %> <%= h.child_name %> <%= h.child_ml %>ml</td>
+        <td data-label="Jumlah" class="num"><%= h.qty %> botol, <%= h.ml_total %> ml</td>
+        <td data-label="Botol habis" class="num"><%= h.bottles_consumed %></td>
+        <td data-label="Oleh"><%= h.username || '-' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('footer') %>

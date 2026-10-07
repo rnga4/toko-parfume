@@ -1,0 +1,111 @@
+<%- include('header') %>
+<% const available = products.filter(p => p.sellable > 0) %>
+<h2>Kasir</h2>
+<% if (error) { %>
+<div class="alert" role="alert"><%= error %></div>
+<% } %>
+<% if (flash) { %>
+<div class="flash" role="status"><%= flash %></div>
+<% } %>
+
+<div class="card">
+  <h3>Tambah ke keranjang</h3>
+  <% if (!available.length) { %>
+  <p class="state">Semua produk sedang habis, jadi belum bisa berjualan.</p>
+  <% if (user.role === 'admin') { %>
+  <a class="btn" href="/purchases">Buka Pembelian</a>
+  <% } %>
+  <% } else { %>
+  <form method="post" action="/kasir/cart/add">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-grid">
+      <select name="product_id" aria-label="Produk">
+        <% products.forEach(p => { %>
+        <option value="<%= p.id %>"<%= p.sellable <= 0 ? ' disabled' : '' %>><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml, stok <%= p.sellable %></option>
+        <% }) %>
+      </select>
+      <input name="qty" type="number" inputmode="numeric" min="1" value="1" aria-label="Jumlah" required>
+      <button type="submit">Tambah</button>
+    </div>
+  </form>
+  <% } %>
+</div>
+
+<div class="grid grid-split">
+  <div class="card">
+    <h3>Keranjang</h3>
+    <% if (!cart.length) { %>
+    <p class="state">Keranjang masih kosong. Pilih produk di atas untuk mulai berjualan.</p>
+    <% } else { %>
+    <table class="stack">
+      <thead>
+        <tr>
+          <th scope="col">Produk</th>
+          <th scope="col" class="num">Harga</th>
+          <th scope="col" class="num">Jumlah</th>
+          <th scope="col" class="num">Subtotal</th>
+          <th scope="col" aria-label="Aksi"></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% cart.forEach(item => { %>
+        <tr>
+          <td data-label="Produk"><%= item.brand %> <%= item.name %> <%= item.size_ml %>ml</td>
+          <td data-label="Harga" class="num"><%= rp(item.unit_price) %></td>
+          <td data-label="Jumlah" class="num">
+            <form method="post" action="/kasir/cart/qty" class="row-form">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="item_id" value="<%= item.id %>">
+              <span class="qty-form">
+                <button type="submit" name="qty" value="<%= item.qty - 1 %>" aria-label="Kurangi jumlah <%= item.brand %> <%= item.name %>">&#8722;</button>
+                <span class="qty-value"><%= item.qty %></span>
+                <button type="submit" name="qty" value="<%= item.qty + 1 %>" aria-label="Tambah jumlah <%= item.brand %> <%= item.name %>">+</button>
+              </span>
+            </form>
+          </td>
+          <td data-label="Subtotal" class="num"><%= rp(item.qty * item.unit_price) %></td>
+          <td class="actions">
+            <form method="post" action="/kasir/cart/remove" class="row-form">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="hidden" name="item_id" value="<%= item.id %>">
+              <button type="submit" class="danger" aria-label="Hapus <%= item.brand %> <%= item.name %> dari keranjang">Hapus</button>
+            </form>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <form method="post" action="/kasir/cart/clear" class="row-form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button type="submit" class="link">Kosongkan keranjang</button>
+    </form>
+    <% } %>
+  </div>
+
+  <% if (cart.length) { %>
+  <div class="card">
+    <h3>Pembayaran</h3>
+    <dl class="sums">
+      <div><dt>Subtotal</dt><dd><%= rp(subtotal) %></dd></div>
+      <div><dt>Diskon</dt><dd><%= rp(discount) %></dd></div>
+      <div class="total"><dt>Total</dt><dd><%= rp(total) %></dd></div>
+    </dl>
+    <form method="post" action="/kasir/checkout">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <div class="form-grid one">
+        <input name="discount" type="number" inputmode="numeric" min="0" value="<%= discount %>" aria-label="Diskon dalam rupiah" placeholder="Diskon (Rp)">
+        <select name="payment" aria-label="Metode bayar">
+          <% payments.forEach(p => { %>
+          <option value="<%= p.code %>"<%= payment === p.code ? ' selected' : '' %>><%= p.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="actions-row">
+        <button type="submit" formaction="/kasir/preview">Hitung total</button>
+        <button type="submit">Bayar</button>
+      </div>
+    </form>
+  </div>
+  <% } %>
+</div>
+<%- include('footer') %>

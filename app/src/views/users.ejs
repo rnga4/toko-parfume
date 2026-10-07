@@ -1,0 +1,77 @@
+<%- include('header') %>
+<h2>Akun</h2>
+<% if (error) { %>
+<div class="alert" role="alert"><%= error %></div>
+<% } %>
+<% if (flash) { %>
+<div class="flash" role="status"><%= flash %></div>
+<% } %>
+
+<div class="card">
+  <h3>Tambah akun</h3>
+  <form method="post" action="/users">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-grid">
+      <input name="username" aria-label="Username" placeholder="Username" autocomplete="off" required>
+      <input name="password" type="password" aria-label="Kata sandi" placeholder="Kata sandi" autocomplete="new-password" required>
+      <select name="role" aria-label="Role">
+        <% roles.forEach(r => { %>
+        <option value="<%= r %>"><%= r === 'admin' ? 'Admin' : 'Kasir' %></option>
+        <% }) %>
+      </select>
+      <button type="submit">Tambah</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Daftar akun</h3>
+  <% if (!users.length) { %>
+  <p class="state">Belum ada akun tercatat.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Username</th>
+        <th scope="col">Role</th>
+        <th scope="col">Status</th>
+        <th scope="col">Dibuat</th>
+        <th scope="col" aria-label="Aksi"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach(u => { %>
+      <tr>
+        <td data-label="Username"><%= u.username %><% if (u.id === user.id) { %> <span class="muted">Anda</span><% } %></td>
+        <td data-label="Role"><%= u.role === 'admin' ? 'Admin' : 'Kasir' %></td>
+        <td data-label="Status"><%= u.is_active ? 'Aktif' : 'Nonaktif' %></td>
+        <td data-label="Dibuat" class="muted"><%= new Date(u.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) %></td>
+        <td class="actions">
+          <div class="cell-stack">
+            <form method="post" action="/users/<%= u.id %>/role" class="cell-form">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <select name="role" aria-label="Role <%= u.username %>">
+                <% roles.forEach(r => { %>
+                <option value="<%= r %>"<%= u.role === r ? ' selected' : '' %>><%= r === 'admin' ? 'Admin' : 'Kasir' %></option>
+                <% }) %>
+              </select>
+              <button type="submit" aria-label="Ubah role <%= u.username %>">Ubah role</button>
+            </form>
+            <form method="post" action="/users/<%= u.id %>/password" class="cell-form">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input name="password" type="password" aria-label="Kata sandi baru untuk <%= u.username %>" placeholder="Kata sandi baru" autocomplete="new-password">
+              <button type="submit" aria-label="Ganti kata sandi <%= u.username %>">Ganti sandi</button>
+            </form>
+            <form method="post" action="/users/<%= u.id %>/toggle" class="cell-form">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <button type="submit" class="<%= u.is_active ? 'danger' : '' %>"><%= u.is_active ? 'Nonaktifkan' : 'Aktifkan' %></button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('footer') %>

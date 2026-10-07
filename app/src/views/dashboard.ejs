@@ -1,0 +1,50 @@
+<%- include('header') %>
+<h2>Dashboard</h2>
+<div class="grid">
+  <div class="card stat stat-lead"><small>Omzet Hari Ini</small><h3 class="num"><%= rp(omzet) %></h3></div>
+  <div class="card stat"><small>Total Produk</small><h3 class="num"><%= totalProduk %></h3></div>
+  <div class="card stat"><small>Stok Menipis</small><h3 class="num <%= lowStock.length ? 'warn' : '' %>"><%= lowStock.length %></h3></div>
+  <div class="card stat"><small>Kedaluwarsa</small><h3 class="num <%= expiring.length ? 'warn' : '' %>"><%= expiring.length %></h3></div>
+</div>
+<div class="card mt">
+  <h3>Stok Menipis</h3>
+  <% if (lowStock.length) { %>
+  <table class="stack">
+    <thead><tr><th scope="col">Produk</th><th scope="col" class="num">Stok</th><th scope="col" class="num">Min</th></tr></thead>
+    <tbody>
+    <% lowStock.forEach(p => { %>
+      <tr>
+        <td data-label="Produk"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</td>
+        <td data-label="Stok" class="num warn"><%= p.stock %></td>
+        <td data-label="Min" class="num"><%= p.min_stock %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } else { %>
+  <p class="state">Tidak ada produk yang stoknya di bawah batas minimum. Semua stok aman.</p>
+  <a class="btn" href="/products">Buka daftar produk</a>
+  <% } %>
+</div>
+<div class="card mt">
+  <h3>Akan Kedaluwarsa</h3>
+  <p class="state">Produk aktif yang tanggal kedaluwarsanya sudah lewat atau jatuh dalam 30 hari ke depan.</p>
+  <% if (expiring.length) { %>
+  <table class="stack">
+    <thead><tr><th scope="col">Produk</th><th scope="col" class="num">Stok</th><th scope="col">Kedaluwarsa</th></tr></thead>
+    <tbody>
+    <% expiring.forEach(p => { %>
+      <tr>
+        <td data-label="Produk"><%= p.sku %> <%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</td>
+        <td data-label="Stok" class="num"><%= p.stock %></td>
+        <td data-label="Kedaluwarsa" class="<%= p.is_expired ? 'warn' : '' %>"><%= p.expiry_str %><% if (p.is_expired) { %> <span class="muted">lewat</span><% } %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } else { %>
+  <p class="state">Tidak ada produk yang mendekati tanggal kedaluwarsa. Kolom kedaluwarsa diisi lewat halaman Produk.</p>
+  <a class="btn" href="/products">Buka daftar produk</a>
+  <% } %>
+</div>
+<%- include('footer') %>

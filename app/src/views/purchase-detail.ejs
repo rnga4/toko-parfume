@@ -1,0 +1,43 @@
+<%- include('header') %>
+<h2><%= purchase.invoice_no || ('Pembelian #' + purchase.id) %></h2>
+
+<div class="card">
+  <dl class="sums">
+    <div><dt>Waktu</dt><dd><%= new Date(purchase.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></dd></div>
+    <div><dt>Supplier</dt><dd><%= purchase.supplier || '-' %></dd></div>
+    <div><dt>Pencatat</dt><dd><%= purchase.username || '-' %></dd></div>
+    <div class="total"><dt>Total</dt><dd><%= rp(purchase.total) %></dd></div>
+  </dl>
+</div>
+
+<div class="card">
+  <h3>Baris pembelian</h3>
+  <% if (!items.length) { %>
+  <p class="state">Pembelian ini tidak punya rincian baris.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">SKU</th>
+        <th scope="col">Produk</th>
+        <th scope="col" class="num">Harga beli</th>
+        <th scope="col" class="num">Jumlah</th>
+        <th scope="col" class="num">Subtotal</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% items.forEach(i => { %>
+      <tr>
+        <td data-label="SKU" class="muted"><%= i.sku %></td>
+        <td data-label="Produk"><%= i.brand %> <%= i.name %> <%= i.size_ml %>ml</td>
+        <td data-label="Harga beli" class="num"><%= rp(i.cost) %></td>
+        <td data-label="Jumlah" class="num"><%= i.qty %></td>
+        <td data-label="Subtotal" class="num"><%= rp(i.cost * i.qty) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+  <p class="mt"><a class="btn" href="/purchases">Ke daftar pembelian</a></p>
+</div>
+<%- include('footer') %>

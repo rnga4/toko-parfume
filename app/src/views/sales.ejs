@@ -1,0 +1,60 @@
+<%- include('header') %>
+<h2>Riwayat Penjualan</h2>
+<% if (flash) { %>
+<div class="flash" role="status"><%= flash %></div>
+<% } %>
+
+<div class="card">
+  <form method="get" action="/sales">
+    <div class="form-grid">
+      <% if (isAdmin) { %>
+      <select name="u" aria-label="Kasir">
+        <option value="">Semua kasir</option>
+        <% users.forEach(u => { %>
+        <option value="<%= u.id %>"<%= String(filterUser) === String(u.id) ? ' selected' : '' %>><%= u.username %></option>
+        <% }) %>
+      </select>
+      <% } %>
+      <input type="date" name="d" value="<%= filterDate %>" aria-label="Tanggal penjualan">
+      <button type="submit">Saring</button>
+      <% if (filterUser || filterDate) { %>
+      <a class="btn" href="/sales">Hapus saringan</a>
+      <% } %>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Daftar penjualan</h3>
+  <% if (!sales.length) { %>
+  <p class="state">Belum ada penjualan yang cocok dengan saringan ini.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Nomor</th>
+        <th scope="col">Waktu</th>
+        <th scope="col">Kasir</th>
+        <th scope="col">Bayar</th>
+        <th scope="col" class="num">Item</th>
+        <th scope="col" class="num">Diskon</th>
+        <th scope="col" class="num">Total</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% sales.forEach(s => { %>
+      <tr>
+        <td data-label="Nomor"><a href="/sales/<%= s.id %>"><%= s.invoice_no %></a></td>
+        <td data-label="Waktu" class="muted"><%= new Date(s.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></td>
+        <td data-label="Kasir"><%= s.username || '-' %></td>
+        <td data-label="Bayar"><%= paymentLabel[s.payment_method] || s.payment_method %></td>
+        <td data-label="Item" class="num"><%= s.items %></td>
+        <td data-label="Diskon" class="num"><%= rp(s.discount) %></td>
+        <td data-label="Total" class="num"><%= rp(s.total) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('footer') %>

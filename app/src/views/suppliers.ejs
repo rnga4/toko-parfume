@@ -1,0 +1,61 @@
+<%- include('header') %>
+<h2>Supplier</h2>
+<% if (error) { %>
+<div class="alert" role="alert"><%= error %></div>
+<% } %>
+
+<div class="card">
+  <h3>Tambah supplier</h3>
+  <form method="post" action="/suppliers">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-grid">
+      <input name="name" aria-label="Nama supplier" placeholder="Nama" value="<%= form.name || '' %>" required>
+      <input name="phone" aria-label="Telepon supplier" placeholder="Telepon" value="<%= form.phone || '' %>">
+      <input name="address" aria-label="Alamat supplier" placeholder="Alamat" value="<%= form.address || '' %>">
+      <button type="submit">Tambah</button>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Daftar supplier</h3>
+  <% if (!suppliers.length) { %>
+  <p class="state">Belum ada supplier tercatat. Isi form di atas untuk menambah supplier pertama.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Nama</th>
+        <th scope="col">Telepon</th>
+        <th scope="col">Alamat</th>
+        <th scope="col">Status</th>
+        <th scope="col" aria-label="Aksi"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% suppliers.forEach(s => { %>
+      <tr>
+        <td data-label="Nama"><%= s.name %></td>
+        <td data-label="Telepon"><%= s.phone || '-' %></td>
+        <td data-label="Alamat"><%= s.address || '-' %></td>
+        <td data-label="Status"><%= s.is_active ? 'Aktif' : 'Nonaktif' %></td>
+        <td class="actions">
+          <% if (s.is_active) { %>
+          <form method="post" action="/suppliers/<%= s.id %>/delete" onsubmit="return confirm('Nonaktifkan supplier ini?')">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button class="danger" aria-label="Nonaktifkan <%= s.name %>">Nonaktifkan</button>
+          </form>
+          <% } else { %>
+          <form method="post" action="/suppliers/<%= s.id %>/restore">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button aria-label="Aktifkan <%= s.name %>">Aktifkan</button>
+          </form>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('footer') %>

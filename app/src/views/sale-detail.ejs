@@ -1,0 +1,52 @@
+<%- include('header') %>
+<h2><%= sale.invoice_no %></h2>
+
+<div class="card">
+  <dl class="sums">
+    <div><dt>Waktu</dt><dd><%= new Date(sale.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></dd></div>
+    <div><dt>Kasir</dt><dd><%= sale.username || '-' %></dd></div>
+    <div><dt>Metode bayar</dt><dd><%= paymentLabel %></dd></div>
+    <div><dt>Subtotal</dt><dd><%= rp(sale.subtotal) %></dd></div>
+    <div><dt>Diskon</dt><dd><%= rp(sale.discount) %></dd></div>
+    <div class="total"><dt>Total</dt><dd><%= rp(sale.total) %></dd></div>
+  </dl>
+</div>
+
+<div class="card">
+  <h3>Item terjual</h3>
+  <% if (!items.length) { %>
+  <p class="state">Penjualan ini tidak punya rincian item.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">SKU</th>
+        <th scope="col">Produk</th>
+        <th scope="col" class="num">Harga</th>
+        <th scope="col" class="num">Jumlah</th>
+        <th scope="col" class="num">Subtotal</th>
+        <% if (isAdmin) { %><th scope="col" class="num">Diretur</th><% } %>
+      </tr>
+    </thead>
+    <tbody>
+      <% items.forEach(i => { %>
+      <tr>
+        <td data-label="SKU" class="muted"><%= i.sku %></td>
+        <td data-label="Produk"><%= i.brand %> <%= i.name %> <%= i.size_ml %>ml</td>
+        <td data-label="Harga" class="num"><%= rp(i.price) %></td>
+        <td data-label="Jumlah" class="num"><%= i.qty %></td>
+        <td data-label="Subtotal" class="num"><%= rp(i.price * i.qty) %></td>
+        <% if (isAdmin) { %><td data-label="Diretur" class="num <%= i.returned ? 'warn' : '' %>"><%= i.returned %></td><% } %>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+  <div class="actions-row">
+    <a class="btn" href="/sales">Ke daftar riwayat</a>
+    <% if (isAdmin) { %>
+    <a class="btn" href="/returns/new?sale=<%= sale.id %>">Buat retur atau tukar</a>
+    <% } %>
+  </div>
+</div>
+<%- include('footer') %>

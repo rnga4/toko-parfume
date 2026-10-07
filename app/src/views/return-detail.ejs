@@ -1,0 +1,76 @@
+<%- include('header') %>
+<h2><%= ret.return_no %></h2>
+
+<div class="card">
+  <dl class="sums">
+    <div><dt>Waktu</dt><dd><%= new Date(ret.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></dd></div>
+    <div><dt>Penjualan asal</dt><dd><a href="/sales/<%= ret.sale_id %>"><%= ret.invoice_no %></a></dd></div>
+    <div><dt>Jenis</dt><dd><%= kindLabel[ret.kind] %></dd></div>
+    <div><dt>Diproses oleh</dt><dd><%= ret.username || '-' %></dd></div>
+    <div><dt>Nilai barang masuk</dt><dd><%= rp(ret.subtotal_in) %></dd></div>
+    <div><dt>Nilai barang keluar</dt><dd><%= rp(ret.subtotal_out) %></dd></div>
+    <div class="total">
+      <dt><%= ret.net_amount < 0 ? 'Tambahan bayar' : 'Uang kembali' %></dt>
+      <dd><%= rp(Math.abs(ret.net_amount)) %></dd>
+    </div>
+  </dl>
+</div>
+
+<div class="card">
+  <h3>Barang kembali dari pembeli</h3>
+  <% const ins = items.filter(i => i.direction === 'in') %>
+  <% if (!ins.length) { %>
+  <p class="state">Tidak ada barang yang kembali dari pembeli.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">SKU</th>
+        <th scope="col">Produk</th>
+        <th scope="col" class="num">Harga</th>
+        <th scope="col" class="num">Jumlah</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% ins.forEach(i => { %>
+      <tr>
+        <td data-label="SKU" class="muted"><%= i.sku %></td>
+        <td data-label="Produk"><%= i.brand %> <%= i.name %> <%= i.size_ml %>ml</td>
+        <td data-label="Harga" class="num"><%= rp(i.price) %></td>
+        <td data-label="Jumlah" class="num"><%= i.qty %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+
+<% const outs = items.filter(i => i.direction === 'out') %>
+<% if (outs.length) { %>
+<div class="card">
+  <h3>Barang pengganti yang keluar</h3>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">SKU</th>
+        <th scope="col">Produk</th>
+        <th scope="col" class="num">Harga</th>
+        <th scope="col" class="num">Jumlah</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% outs.forEach(i => { %>
+      <tr>
+        <td data-label="SKU" class="muted"><%= i.sku %></td>
+        <td data-label="Produk"><%= i.brand %> <%= i.name %> <%= i.size_ml %>ml</td>
+        <td data-label="Harga" class="num"><%= rp(i.price) %></td>
+        <td data-label="Jumlah" class="num"><%= i.qty %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+
+<p class="mt"><a class="btn" href="/returns">Ke daftar retur</a></p>
+<%- include('footer') %>

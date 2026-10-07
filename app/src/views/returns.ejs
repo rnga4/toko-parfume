@@ -1,0 +1,59 @@
+<%- include('header') %>
+<h2>Retur dan Tukar</h2>
+<% if (flash) { %>
+<div class="flash" role="status"><%= flash %></div>
+<% } %>
+
+<div class="card">
+  <h3>Buka retur dari penjualan</h3>
+  <% if (!sales.length) { %>
+  <p class="state">Belum ada penjualan sama sekali, jadi belum ada yang bisa diretur.</p>
+  <a class="btn" href="/kasir">Buka Kasir</a>
+  <% } else { %>
+  <form method="get" action="/returns/new">
+    <div class="form-grid">
+      <select name="sale" aria-label="Penjualan">
+        <% sales.forEach(s => { %>
+        <option value="<%= s.id %>"><%= s.invoice_no %></option>
+        <% }) %>
+      </select>
+      <button>Buka</button>
+    </div>
+  </form>
+  <% } %>
+</div>
+
+<div class="card">
+  <h3>Daftar retur</h3>
+  <% if (!returns.length) { %>
+  <p class="state">Belum ada retur yang dicatat. Setiap retur menautkan diri ke penjualan asalnya, jadi riwayat barang keluar dan masuk selalu bisa ditelusuri.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Nomor</th>
+        <th scope="col">Waktu</th>
+        <th scope="col">Penjualan asal</th>
+        <th scope="col">Jenis</th>
+        <th scope="col" class="num">Item</th>
+        <th scope="col" class="num">Nilai</th>
+        <th scope="col">Oleh</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% returns.forEach(r => { %>
+      <tr>
+        <td data-label="Nomor"><a href="/returns/<%= r.id %>"><%= r.return_no %></a></td>
+        <td data-label="Waktu" class="muted"><%= new Date(r.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></td>
+        <td data-label="Penjualan asal"><%= r.invoice_no %></td>
+        <td data-label="Jenis"><%= kindLabel[r.kind] %></td>
+        <td data-label="Item" class="num"><%= r.items_in %> masuk<% if (r.items_out) { %>, <%= r.items_out %> keluar<% } %></td>
+        <td data-label="Nilai" class="num"><%= rp(r.net_amount) %><% if (r.net_amount < 0) { %> <span class="muted">tambahan</span><% } %></td>
+        <td data-label="Oleh"><%= r.username || '-' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('footer') %>

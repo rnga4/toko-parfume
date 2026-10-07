@@ -1,0 +1,90 @@
+<%- include('header') %>
+<h2>Opname <%= opname.opname_no %></h2>
+<% if (flash) { %>
+<div class="flash" role="status"><%= flash %></div>
+<% } %>
+
+<div class="card">
+  <dl class="sums">
+    <div><dt>Status</dt><dd><%= opname.status === 'open' ? 'Berjalan' : 'Selesai' %></dd></div>
+    <div><dt>Dibuka</dt><dd><%= new Date(opname.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></dd></div>
+    <div><dt>Selesai</dt><dd><%= opname.finished_at ? new Date(opname.finished_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' %></dd></div>
+    <div><dt>Oleh</dt><dd><%= opname.username || '-' %></dd></div>
+    <div><dt>Catatan</dt><dd><%= opname.note || '-' %></dd></div>
+  </dl>
+</div>
+
+<% if (!items.length) { %>
+<div class="card">
+  <p class="state">Belum ada produk aktif, jadi sesi ini tidak punya baris untuk dihitung.</p>
+  <a class="btn" href="/products">Buka daftar produk</a>
+</div>
+<% } else if (opname.status === 'open') { %>
+<div class="card">
+  <h3>Hitungan fisik</h3>
+  <p class="state">Kosongkan kolom hitung fisik pada produk yang belum Anda hitung. Stok sistem diambil ulang saat sesi diselesaikan, jadi barang yang terjual selama sesi tetap ikut terhitung.</p>
+  <form method="post" action="/opnames/<%= opname.id %>/count">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <table class="stack">
+      <thead>
+        <tr>
+          <th scope="col">Produk</th>
+          <th scope="col" class="num">Stok sistem</th>
+          <th scope="col" class="num">Hitung fisik</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(i => { %>
+        <tr>
+          <td data-label="Produk"><%= i.sku %> <%= i.brand %> <%= i.name %> <%= i.size_ml %>ml<% if (!i.is_active) { %> <span class="muted">Nonaktif</span><% } %><% if (i.ml_used > 0) { %> <span class="muted">sisa <%= i.stock * i.size_ml - i.ml_used %>ml</span><% } %></td>
+          <td data-label="Stok sistem" class="num"><%= i.stock %></td>
+          <td data-label="Hitung fisik" class="num">
+            <input type="hidden" name="prod_id" value="<%= i.product_id %>">
+            <input name="count" type="number" inputmode="numeric" min="0" value="<%= i.counted_qty === null ? '' : i.counted_qty %>" placeholder="belum" aria-label="Hitung fisik <%= i.brand %> <%= i.name %>" class="qty-input">
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <div class="actions-row">
+      <button>Simpan hitungan</button>
+      <button type="submit" formaction="/opnames/<%= opname.id %>/finish" onsubmit="return confirm('Selesaikan opname? Selisih hitungan fisik langsung menjadi penyesuaian stok dan sesi tidak bisa diubah lagi.')">Selesaikan opname</button>
+      <a class="btn" href="/opnames">Ke daftar sesi</a>
+    </div>
+  </form>
+</div>
+<% } else { %>
+<div class="card">
+  <h3>Hasil opname</h3>
+  <% const countedItems = items.filter(i => i.counted_qty !== null) %>
+  <% if (!countedItems.length) { %>
+  <p class="state">Sesi ini diselesaikan tanpa satu pun hitungan fisik, jadi tidak ada stok yang berubah.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Produk</th>
+        <th scope="col" class="num">Stok sistem</th>
+        <th scope="col" class="num">Hitung fisik</th>
+        <th scope="col" class="num">Selisih</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% countedItems.forEach(i => { %>
+      <% const diff = i.counted_qty - i.system_qty %>
+      <tr>
+        <td data-label="Produk"><%= i.sku %> <%= i.brand %> <%= i.name %> <%= i.size_ml %>ml<% if (!i.is_active) { %> <span class="muted">Nonaktif</span><% } %></td>
+        <td data-label="Stok sistem" class="num"><%= i.system_qty %></td>
+        <td data-label="Hitung fisik" class="num"><%= i.counted_qty %></td>
+        <td data-label="Selisih" class="num <%= diff !== 0 ? 'warn' : '' %>"><%= diff > 0 ? '+' : '' %><%= diff %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+  <div class="actions-row">
+    <a class="btn" href="/opnames">Ke daftar sesi</a>
+  </div>
+</div>
+<% } %>
+<%- include('footer') %>

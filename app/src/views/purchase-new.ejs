@@ -1,0 +1,116 @@
+<%- include('header') %>
+<h2>Pembelian baru</h2>
+<% if (error) { %>
+<div class="alert" role="alert"><%= error %></div>
+<% } %>
+<% if (flash) { %>
+<div class="flash" role="status"><%= flash %></div>
+<% } %>
+
+<div class="card">
+  <h3>Tambah atau ubah baris</h3>
+  <% if (!products.length) { %>
+  <p class="state">Belum ada produk aktif. Tambahkan produk dulu di halaman Produk.</p>
+  <% } else { %>
+  <form method="post" action="/purchases/item/add">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-grid">
+      <select name="product_id" aria-label="Produk">
+        <% products.forEach(p => { %>
+        <option value="<%= p.id %>"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml, harga beli <%= rp(p.cost_price) %></option>
+        <% }) %>
+      </select>
+      <input name="qty" type="number" inputmode="numeric" min="1" value="1" aria-label="Jumlah" required>
+      <input name="cost" type="number" inputmode="numeric" min="0" placeholder="Harga beli (Rp)" aria-label="Harga beli dalam rupiah" required>
+      <button type="submit">Tambah</button>
+    </div>
+    <p class="mt">Kalau produk sudah ada di daftar, isiannya akan menimpa jumlah dan harga lama.</p>
+  </form>
+  <% } %>
+</div>
+
+<div class="card">
+  <h3>Daftar pembelian</h3>
+  <% if (!items.length) { %>
+  <p class="state">Belum ada baris. Isi produk, jumlah, dan harga beli di atas untuk mulai mencatat stok masuk.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Produk</th>
+        <th scope="col" class="num">Harga beli</th>
+        <th scope="col" class="num">Jumlah</th>
+        <th scope="col" class="num">Subtotal</th>
+        <th scope="col" aria-label="Aksi"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% items.forEach(item => { %>
+      <tr>
+        <td data-label="Produk"><%= item.brand %> <%= item.name %> <%= item.size_ml %>ml<br><span class="muted"><%= item.sku %></span></td>
+        <td data-label="Harga beli" class="num">
+          <form method="post" action="/purchases/item/price" class="inline-form">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <input type="hidden" name="item_id" value="<%= item.id %>">
+            <input name="cost" type="number" inputmode="numeric" min="0" value="<%= item.unit_price %>" aria-label="Harga beli <%= item.brand %> <%= item.name %> dalam rupiah">
+            <button type="submit" aria-label="Simpan harga beli <%= item.brand %> <%= item.name %>">Simpan</button>
+          </form>
+        </td>
+        <td data-label="Jumlah" class="num">
+          <form method="post" action="/purchases/item/qty" class="row-form">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <input type="hidden" name="item_id" value="<%= item.id %>">
+            <span class="qty-form">
+              <button type="submit" name="qty" value="<%= item.qty - 1 %>" aria-label="Kurangi jumlah <%= item.brand %> <%= item.name %>">&#8722;</button>
+              <span class="qty-value"><%= item.qty %></span>
+              <button type="submit" name="qty" value="<%= item.qty + 1 %>" aria-label="Tambah jumlah <%= item.brand %> <%= item.name %>">+</button>
+            </span>
+          </form>
+        </td>
+        <td data-label="Subtotal" class="num"><%= rp(item.qty * item.unit_price) %></td>
+        <td class="actions">
+          <form method="post" action="/purchases/item/remove" class="row-form">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <input type="hidden" name="item_id" value="<%= item.id %>">
+            <button type="submit" class="danger" aria-label="Hapus <%= item.brand %> <%= item.name %> dari daftar">Hapus</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <form method="post" action="/purchases/item/clear" class="row-form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <button type="submit" class="link">Kosongkan daftar</button>
+  </form>
+  <% } %>
+</div>
+
+<div class="card">
+  <h3>Simpan pembelian</h3>
+  <% if (!items.length) { %>
+  <p class="state">Tambahkan minimal satu baris sebelum menyimpan.</p>
+  <% } else if (!suppliers.length) { %>
+  <p class="state">Belum ada supplier aktif. Tambahkan supplier dulu di halaman Supplier.</p>
+  <% } else { %>
+  <dl class="sums">
+    <div><dt>Total barang</dt><dd><%= items.reduce((n, i) => n + i.qty, 0) %></dd></div>
+    <div class="total"><dt>Total</dt><dd><%= rp(total) %></dd></div>
+  </dl>
+  <form method="post" action="/purchases/commit">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-grid one">
+      <select name="supplier_id" aria-label="Supplier" required>
+        <option value="">Pilih supplier</option>
+        <% suppliers.forEach(s => { %>
+        <option value="<%= s.id %>"><%= s.name %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="actions-row">
+      <button type="submit">Simpan pembelian</button>
+    </div>
+  </form>
+  <% } %>
+</div>
+<%- include('footer') %>

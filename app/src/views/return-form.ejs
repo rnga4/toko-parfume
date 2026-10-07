@@ -1,0 +1,126 @@
+<%- include('header') %>
+<h2>Retur <%= sale.invoice_no %></h2>
+<% if (error) { %>
+<div class="alert" role="alert"><%= error %></div>
+<% } %>
+
+<div class="card">
+  <dl class="sums">
+    <div><dt>Waktu penjualan</dt><dd><%= new Date(sale.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></dd></div>
+    <div><dt>Kasir</dt><dd><%= sale.username || '-' %></dd></div>
+    <div><dt>Subtotal</dt><dd><%= rp(sale.subtotal) %></dd></div>
+    <div><dt>Diskon</dt><dd><%= rp(sale.discount) %></dd></div>
+    <div class="total"><dt>Total</dt><dd><%= rp(sale.total) %></dd></div>
+  </dl>
+</div>
+
+<div class="card">
+  <h3>Item penjualan</h3>
+  <p class="state">Isi jumlah yang kembali dari pembeli. Nol berarti item ini tidak ikut diretur. Nilai kembali dihitung proporsional terhadap diskon invoice.</p>
+  <form method="post" action="/returns/commit">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input type="hidden" name="sale_id" value="<%= sale.id %>">
+    <table class="stack">
+      <thead>
+        <tr>
+          <th scope="col">Produk</th>
+          <th scope="col" class="num">Terjual</th>
+          <th scope="col" class="num">Sudah diretur</th>
+          <th scope="col" class="num">Jumlah kembali</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(i => { %>
+        <% const remaining = i.qty - i.returned %>
+        <tr>
+          <td data-label="Produk"><%= i.sku %> <%= i.brand %> <%= i.name %> <%= i.size_ml %>ml<% if (!i.is_active) { %> <span class="muted">Nonaktif</span><% } %></td>
+          <td data-label="Terjual" class="num"><%= i.qty %></td>
+          <td data-label="Sudah diretur" class="num"><%= i.returned %><% if (i.returned) { %> <span class="muted">sisa <%= remaining %></span><% } %></td>
+          <td data-label="Jumlah kembali" class="num">
+            <input type="hidden" name="ret_product" value="<%= i.product_id %>">
+            <input name="ret_qty" type="number" inputmode="numeric" min="0" max="<%= remaining %>" value="0" aria-label="Jumlah kembali <%= i.brand %> <%= i.name %>" class="qty-input">
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <div class="actions-row">
+      <button name="kind" value="return">Simpan sebagai retur uang</button>
+      <button name="kind" value="exchange">Simpan sebagai tukar barang</button>
+      <a class="btn" href="/sales/<%= sale.id %>">Batal</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Barang pengganti</h3>
+  <p class="state">Dipakai kalau pembeli menukar barang. Isi daftar ini hanya dipakai saat tombol "Simpan sebagai tukar barang" ditekan; nilai barang pengganti dipotong dari nilai retur.</p>
+  <% if (!products.length) { %>
+  <p class="state">Tidak ada produk aktif yang stoknya tersedia untuk dijadikan barang pengganti.</p>
+  <% } else { %>
+  <form method="post" action="/returns/exchange/add">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input type="hidden" name="sale_id" value="<%= sale.id %>">
+    <div class="form-grid">
+      <select name="product_id" aria-label="Barang pengganti">
+        <% products.forEach(p => { %>
+        <option value="<%= p.id %>"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml, stok <%= p.stock - (p.ml_used > 0 ? 1 : 0) %></option>
+        <% }) %>
+      </select>
+      <input name="qty" type="number" inputmode="numeric" min="1" value="1" aria-label="Jumlah barang pengganti" required>
+      <button>Tambah</button>
+    </div>
+  </form>
+  <% } %>
+
+  <% if (!exchange.length) { %>
+  <p class="state">Belum ada barang pengganti.</p>
+  <% } else { %>
+  <table class="stack mt">
+    <thead>
+      <tr>
+        <th scope="col">Produk</th>
+        <th scope="col" class="num">Harga</th>
+        <th scope="col" class="num">Jumlah</th>
+        <th scope="col" class="num">Subtotal</th>
+        <th scope="col" aria-label="Aksi"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% exchange.forEach(e => { %>
+      <tr>
+        <td data-label="Produk"><%= e.sku %> <%= e.brand %> <%= e.name %> <%= e.size_ml %>ml</td>
+        <td data-label="Harga" class="num"><%= rp(e.unit_price) %></td>
+        <td data-label="Jumlah" class="num">
+          <form method="post" action="/returns/exchange/qty" class="row-form">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <input type="hidden" name="sale_id" value="<%= sale.id %>">
+            <input type="hidden" name="item_id" value="<%= e.id %>">
+            <span class="qty-form">
+              <button type="submit" name="qty" value="<%= e.qty - 1 %>" aria-label="Kurangi jumlah <%= e.brand %> <%= e.name %>">&#8722;</button>
+              <span class="qty-value"><%= e.qty %></span>
+              <button type="submit" name="qty" value="<%= e.qty + 1 %>" aria-label="Tambah jumlah <%= e.brand %> <%= e.name %>">+</button>
+            </span>
+          </form>
+        </td>
+        <td data-label="Subtotal" class="num"><%= rp(e.qty * e.unit_price) %></td>
+        <td class="actions">
+          <form method="post" action="/returns/exchange/remove" class="row-form">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <input type="hidden" name="sale_id" value="<%= sale.id %>">
+            <input type="hidden" name="item_id" value="<%= e.id %>">
+            <button class="danger" aria-label="Hapus <%= e.brand %> <%= e.name %> dari barang pengganti">Hapus</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <form method="post" action="/returns/exchange/clear" class="row-form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <input type="hidden" name="sale_id" value="<%= sale.id %>">
+    <button class="link">Kosongkan barang pengganti</button>
+  </form>
+  <% } %>
+</div>
+<%- include('footer') %>

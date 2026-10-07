@@ -1,0 +1,49 @@
+<%- include('header') %>
+<% const exp = product.expiry_str || product.expiry_date || '' %>
+<% const sisa = product.stock * product.size_ml - product.ml_used %>
+<h2>Ubah produk</h2>
+<% if (error) { %>
+<div class="alert" role="alert"><%= error %></div>
+<% } %>
+
+<div class="card">
+  <form method="post" action="/products/<%= product.id %>/edit">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-grid">
+      <input name="sku" aria-label="SKU" placeholder="SKU" value="<%= product.sku %>" required>
+      <input name="brand" aria-label="Brand" placeholder="Brand" value="<%= product.brand %>" required>
+      <input name="name" aria-label="Nama" placeholder="Nama" value="<%= product.name %>" required>
+      <select name="category" aria-label="Kategori">
+        <% categories.forEach(c => { %>
+        <option<%= product.category === c ? ' selected' : '' %>><%= c %></option>
+        <% }) %>
+      </select>
+      <input name="size_ml" type="number" aria-label="Ukuran dalam mililiter" inputmode="numeric" min="1" placeholder="Ukuran (ml)" value="<%= product.size_ml %>" required>
+      <input name="cost_price" type="number" aria-label="Harga beli" inputmode="numeric" min="0" placeholder="Harga beli" value="<%= product.cost_price %>" required>
+      <input name="sell_price" type="number" aria-label="Harga jual" inputmode="numeric" min="0" placeholder="Harga jual" value="<%= product.sell_price %>" required>
+      <input name="min_stock" type="number" aria-label="Stok minimum" inputmode="numeric" min="0" placeholder="Stok minimum" value="<%= product.min_stock %>" required>
+      <input name="batch_no" aria-label="Nomor batch" placeholder="Nomor batch (opsional)" value="<%= product.batch_no || '' %>">
+      <input name="expiry_date" type="date" aria-label="Tanggal kedaluwarsa" value="<%= exp %>">
+      <select name="parent_product_id" aria-label="Produk induk">
+        <option value="">Tanpa induk</option>
+        <% parents.forEach(p => { %>
+        <option value="<%= p.id %>"<%= String(product.parent_product_id) === String(p.id) ? ' selected' : '' %>><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="actions-row">
+      <button>Simpan</button>
+      <a class="btn" href="/products">Batal</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Stok dan sisa isi</h3>
+  <dl class="sums">
+    <div><dt>Stok tercatat</dt><dd><%= product.stock %> botol</dd></div>
+    <div><dt>Sisa isi</dt><dd><%= sisa %> ml</dd></div>
+  </dl>
+  <p class="state">Stok tidak bisa diubah lewat form ini. Kalau hitungan fisik berbeda dari catatan, buka Opname untuk mencatat selisihnya supaya riwayat pergerakan stok tetap utuh.</p>
+</div>
+<%- include('footer') %>

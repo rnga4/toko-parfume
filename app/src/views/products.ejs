@@ -1,0 +1,82 @@
+<%- include('header') %>
+<h2>Produk</h2>
+<% if (error) { %>
+<div class="alert" role="alert"><%= error %></div>
+<% } %>
+<% if (canManage) { %>
+<div class="card">
+  <h3>Tambah produk</h3>
+  <form method="post" action="/products">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-grid">
+      <input name="sku" aria-label="SKU" placeholder="SKU" value="<%= form.sku || '' %>" required>
+      <input name="brand" aria-label="Brand" placeholder="Brand" value="<%= form.brand || '' %>" required>
+      <input name="name" aria-label="Nama" placeholder="Nama" value="<%= form.name || '' %>" required>
+      <select name="category" aria-label="Kategori">
+        <% categories.forEach(c => { %>
+        <option<%= (form.category || 'EDP') === c ? ' selected' : '' %>><%= c %></option>
+        <% }) %>
+      </select>
+      <input name="size_ml" type="number" aria-label="Ukuran dalam mililiter" inputmode="numeric" min="1" placeholder="Ukuran (ml)" value="<%= form.size_ml || '' %>" required>
+      <input name="cost_price" type="number" aria-label="Harga beli" inputmode="numeric" min="0" placeholder="Harga beli" value="<%= form.cost_price || '' %>" required>
+      <input name="sell_price" type="number" aria-label="Harga jual" inputmode="numeric" min="0" placeholder="Harga jual" value="<%= form.sell_price || '' %>" required>
+      <input name="stock" type="number" aria-label="Stok" inputmode="numeric" min="0" placeholder="Stok" value="<%= form.stock || '' %>">
+      <input name="min_stock" type="number" aria-label="Stok minimum" inputmode="numeric" min="0" placeholder="Stok minimum" value="<%= form.min_stock || '' %>">
+      <input name="batch_no" aria-label="Nomor batch" placeholder="Nomor batch (opsional)" value="<%= form.batch_no || '' %>">
+      <input name="expiry_date" type="date" aria-label="Tanggal kedaluwarsa" value="<%= form.expiry_date || '' %>">
+      <select name="parent_product_id" aria-label="Produk induk">
+        <option value="">Tanpa induk</option>
+        <% parents.forEach(p => { %>
+        <option value="<%= p.id %>"<%= String(form.parent_product_id) === String(p.id) ? ' selected' : '' %>><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</option>
+        <% }) %>
+      </select>
+      <button>Tambah</button>
+    </div>
+  </form>
+</div>
+<% } %>
+<div class="card">
+  <h3>Daftar Produk</h3>
+  <% if (products.length) { %>
+  <table class="stack">
+    <thead>
+      <tr><th scope="col">SKU</th><th scope="col">Produk</th><th scope="col">Kategori</th><th scope="col" class="num">Ukuran</th><th scope="col" class="num">Beli</th><th scope="col" class="num">Jual</th><th scope="col" class="num">Stok</th><% if (canManage) { %><th scope="col" aria-label="Aksi"></th><% } %></tr>
+    </thead>
+    <tbody>
+    <% products.forEach(p => { %>
+      <tr>
+        <td data-label="SKU"><%= p.sku %></td>
+        <td data-label="Produk"><%= p.brand %> <%= p.name %><% if (!p.is_active) { %> <span class="muted">Nonaktif</span><% } %><% if (p.batch_no || p.expiry_str) { %><br><span class="muted<%= p.expiry_str && p.expiry_str <= today ? ' warn' : '' %>"><% if (p.batch_no) { %>Batch <%= p.batch_no %><% } %><% if (p.batch_no && p.expiry_str) { %>, <% } %><% if (p.expiry_str) { %>kedaluwarsa <%= p.expiry_str %><% } %></span><% } %></td>
+        <td data-label="Kategori"><%= p.category %></td>
+        <td data-label="Ukuran" class="num"><%= p.size_ml %>ml<% if (p.ml_used > 0) { %><br><span class="muted">sisa <%= p.ml_left %>ml</span><% } %></td>
+        <td data-label="Beli" class="num"><%= rp(p.cost_price) %></td>
+        <td data-label="Jual" class="num"><%= rp(p.sell_price) %></td>
+        <td data-label="Stok" class="num <%= p.is_active && p.stock <= p.min_stock ? 'warn' : '' %>"><%= p.stock %></td>
+        <% if (canManage) { %>
+        <td class="actions">
+          <a class="btn" href="/products/<%= p.id %>/edit" aria-label="Ubah <%= p.brand %> <%= p.name %>">Ubah</a>
+          <% if (p.is_active) { %>
+          <form method="post" action="/products/<%= p.id %>/delete" onsubmit="return confirm('Nonaktifkan produk ini? Produk lama yang sudah terjual tetap tersimpan.')">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button class="danger" aria-label="Nonaktifkan <%= p.brand %> <%= p.name %>">Nonaktifkan</button>
+          </form>
+          <% } else { %>
+          <form method="post" action="/products/<%= p.id %>/restore">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button aria-label="Aktifkan <%= p.brand %> <%= p.name %>">Aktifkan</button>
+          </form>
+          <% } %>
+        </td>
+        <% } %>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } else { %>
+  <p class="state">Belum ada produk tercatat di database.</p>
+  <% if (canManage) { %>
+  <p class="state">Isi form di atas untuk menambah produk pertama.</p>
+  <% } %>
+  <% } %>
+</div>
+<%- include('footer') %>

@@ -1,0 +1,67 @@
+<%- include('header') %>
+<h2>Stock Opname</h2>
+<% if (error) { %>
+<div class="alert" role="alert"><%= error %></div>
+<% } %>
+<% if (flash) { %>
+<div class="flash" role="status"><%= flash %></div>
+<% } %>
+
+<div class="card">
+  <% if (open) { %>
+  <h3>Sesi sedang berjalan</h3>
+  <p class="state"><%= open.opname_no %> dibuka <%= new Date(open.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %> oleh <%= open.username || '-' %>. Hitungan fisik baru disimpan setelah sesi ini selesai, jadi stok sistem belum berubah sama sekali.</p>
+  <div class="actions-row">
+    <a class="btn" href="/opnames/<%= open.id %>">Lanjutkan sesi</a>
+    <form method="post" action="/opnames/<%= open.id %>/cancel" onsubmit="return confirm('Batalkan sesi ini? Semua hitungan yang sudah diisi ikut terhapus dan stok tidak berubah.')" class="row-form">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <button class="danger">Batalkan sesi</button>
+    </form>
+  </div>
+  <% } else { %>
+  <h3>Buka sesi opname</h3>
+  <p class="state">Satu sesi mencatat hitungan fisik seluruh produk aktif, lalu selisihnya dijadikan penyesuaian stok beserta alasannya di riwayat pergerakan.</p>
+  <form method="post" action="/opnames/open">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-grid">
+      <input name="note" aria-label="Catatan sesi" placeholder="Catatan (misal: opname akhir bulan)" value="">
+      <button>Buka sesi</button>
+    </div>
+  </form>
+  <% } %>
+</div>
+
+<div class="card">
+  <h3>Riwayat sesi</h3>
+  <% if (!opnames.length) { %>
+  <p class="state">Belum pernah ada sesi opname. Buka sesi di atas untuk pertama kali.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Nomor</th>
+        <th scope="col">Dibuka</th>
+        <th scope="col">Selesai</th>
+        <th scope="col">Status</th>
+        <th scope="col" class="num">Produk</th>
+        <th scope="col">Oleh</th>
+        <th scope="col">Catatan</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% opnames.forEach(o => { %>
+      <tr>
+        <td data-label="Nomor"><a href="/opnames/<%= o.id %>"><%= o.opname_no %></a></td>
+        <td data-label="Dibuka" class="muted"><%= new Date(o.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></td>
+        <td data-label="Selesai" class="muted"><%= o.finished_at ? new Date(o.finished_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '-' %></td>
+        <td data-label="Status"><%= o.status === 'open' ? 'Berjalan' : 'Selesai' %></td>
+        <td data-label="Produk" class="num"><%= o.counted %>/<%= o.products %> dihitung</td>
+        <td data-label="Oleh"><%= o.username || '-' %></td>
+        <td data-label="Catatan" class="muted"><%= o.note || '-' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('footer') %>
