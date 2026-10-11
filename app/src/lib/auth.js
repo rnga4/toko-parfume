@@ -83,6 +83,21 @@ function requireAdmin(req, res, next) {
   next();
 }
 
+function requireRoles(...roles) {
+  const allowed = roles.flat();
+  return function (req, res, next) {
+    if (!req.user) return res.redirect('/login');
+    if (!allowed.includes(req.user.role)) {
+      return errorPage(res, 403, 'Akses ditolak', 'Akun ini tidak punya hak akses ke halaman tersebut.');
+    }
+    next();
+  };
+}
+
+function isAdminLike(user) {
+  return Boolean(user) && (user.role === 'admin' || user.role === 'owner');
+}
+
 module.exports = {
   SESSION_HOURS,
   hashPassword,
@@ -91,5 +106,7 @@ module.exports = {
   destroySession,
   loadSession,
   requireAuth,
-  requireAdmin
+  requireAdmin,
+  requireRoles,
+  isAdminLike
 };

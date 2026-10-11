@@ -1,7 +1,7 @@
 <%- include('header') %>
 <h2>Akun</h2>
 <% if (error) { %>
-<div class="alert" role="alert"><%= error %></div>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
 <% } %>
 <% if (flash) { %>
 <div class="flash" role="status"><%= flash %></div>
@@ -12,13 +12,13 @@
   <form method="post" action="/users">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <div class="form-grid">
-      <input name="username" aria-label="Username" placeholder="Username" autocomplete="off" required>
-      <input name="password" type="password" aria-label="Kata sandi" placeholder="Kata sandi" autocomplete="new-password" required>
-      <select name="role" aria-label="Role">
+      <label><span>Username</span><input name="username" autocomplete="off" required></label>
+      <label><span>Kata sandi</span><input name="password" type="password" autocomplete="new-password" required></label>
+      <label><span>Role</span><select name="role">
         <% roles.forEach(r => { %>
         <option value="<%= r %>"><%= r === 'admin' ? 'Admin' : 'Kasir' %></option>
         <% }) %>
-      </select>
+      </select></label>
       <button type="submit">Tambah</button>
     </div>
   </form>
@@ -50,16 +50,16 @@
           <div class="cell-stack">
             <form method="post" action="/users/<%= u.id %>/role" class="cell-form">
               <input type="hidden" name="_csrf" value="<%= csrf %>">
-              <select name="role" aria-label="Role <%= u.username %>">
+              <label><span>Role</span><select name="role" aria-label="Role <%= u.username %>">
                 <% roles.forEach(r => { %>
                 <option value="<%= r %>"<%= u.role === r ? ' selected' : '' %>><%= r === 'admin' ? 'Admin' : 'Kasir' %></option>
                 <% }) %>
-              </select>
+              </select></label>
               <button type="submit" aria-label="Ubah role <%= u.username %>">Ubah role</button>
             </form>
             <form method="post" action="/users/<%= u.id %>/password" class="cell-form">
               <input type="hidden" name="_csrf" value="<%= csrf %>">
-              <input name="password" type="password" aria-label="Kata sandi baru untuk <%= u.username %>" placeholder="Kata sandi baru" autocomplete="new-password">
+              <label><span>Kata sandi baru</span><input name="password" type="password" aria-label="Kata sandi baru untuk <%= u.username %>" autocomplete="new-password"></label>
               <button type="submit" aria-label="Ganti kata sandi <%= u.username %>">Ganti sandi</button>
             </form>
             <form method="post" action="/users/<%= u.id %>/toggle" class="cell-form">

@@ -1,7 +1,7 @@
 <%- include('header') %>
 <h2>Produk</h2>
 <% if (error) { %>
-<div class="alert" role="alert"><%= error %></div>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
 <% } %>
 <% if (canManage) { %>
 <div class="card">
@@ -9,27 +9,31 @@
   <form method="post" action="/products">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <div class="form-grid">
-      <input name="sku" aria-label="SKU" placeholder="SKU" value="<%= form.sku || '' %>" required>
-      <input name="brand" aria-label="Brand" placeholder="Brand" value="<%= form.brand || '' %>" required>
-      <input name="name" aria-label="Nama" placeholder="Nama" value="<%= form.name || '' %>" required>
-      <select name="category" aria-label="Kategori">
+      <label><span>SKU</span><input name="sku" value="<%= form.sku || '' %>" required></label>
+      <label><span>Brand</span><input name="brand" value="<%= form.brand || '' %>" required></label>
+      <label><span>Nama</span><input name="name" value="<%= form.name || '' %>" required></label>
+      <label><span>Kategori</span><select name="category">
         <% categories.forEach(c => { %>
         <option<%= (form.category || 'EDP') === c ? ' selected' : '' %>><%= c %></option>
         <% }) %>
-      </select>
-      <input name="size_ml" type="number" aria-label="Ukuran dalam mililiter" inputmode="numeric" min="1" placeholder="Ukuran (ml)" value="<%= form.size_ml || '' %>" required>
-      <input name="cost_price" type="number" aria-label="Harga beli" inputmode="numeric" min="0" placeholder="Harga beli" value="<%= form.cost_price || '' %>" required>
-      <input name="sell_price" type="number" aria-label="Harga jual" inputmode="numeric" min="0" placeholder="Harga jual" value="<%= form.sell_price || '' %>" required>
-      <input name="stock" type="number" aria-label="Stok" inputmode="numeric" min="0" placeholder="Stok" value="<%= form.stock || '' %>">
-      <input name="min_stock" type="number" aria-label="Stok minimum" inputmode="numeric" min="0" placeholder="Stok minimum" value="<%= form.min_stock || '' %>">
-      <input name="batch_no" aria-label="Nomor batch" placeholder="Nomor batch (opsional)" value="<%= form.batch_no || '' %>">
-      <input name="expiry_date" type="date" aria-label="Tanggal kedaluwarsa" value="<%= form.expiry_date || '' %>">
-      <select name="parent_product_id" aria-label="Produk induk">
+      </select></label>
+      <label><span>Ukuran (ml)</span><input name="size_ml" type="number" inputmode="numeric" min="1" value="<%= form.size_ml || '' %>" required></label>
+      <label><span>Harga beli (Rp)</span><input name="cost_price" type="number" inputmode="numeric" min="0" value="<%= form.cost_price || '' %>" required></label>
+      <label><span>Harga jual (Retail, Rp)</span><input name="sell_price" type="number" inputmode="numeric" min="0" value="<%= form.sell_price || '' %>" required></label>
+      <label><span>Harga reseller (Rp)</span><input name="price_reseller" type="number" inputmode="numeric" min="0" value="<%= form.price_reseller || 0 %>"></label>
+      <label><span>Harga agen (Rp)</span><input name="price_agen" type="number" inputmode="numeric" min="0" value="<%= form.price_agen || 0 %>"></label>
+      <label><span>Harga grosir (Rp)</span><input name="price_grosir" type="number" inputmode="numeric" min="0" value="<%= form.price_grosir || 0 %>"></label>
+      <label><span>Stok (opsional)</span><input name="stock" type="number" inputmode="numeric" min="0" value="<%= form.stock || '' %>"></label>
+      <label><span>Stok minimum (opsional)</span><input name="min_stock" type="number" inputmode="numeric" min="0" value="<%= form.min_stock || '' %>"></label>
+      <label><span>Nomor batch (opsional)</span><input name="batch_no" value="<%= form.batch_no || '' %>"></label>
+      <label><span>Tanggal kedaluwarsa (opsional)</span><input name="expiry_date" type="date" value="<%= form.expiry_date || '' %>"></label>
+      <label><span>Produk induk</span><select name="parent_product_id">
         <option value="">Tanpa induk</option>
         <% parents.forEach(p => { %>
         <option value="<%= p.id %>"<%= String(form.parent_product_id) === String(p.id) ? ' selected' : '' %>><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</option>
         <% }) %>
-      </select>
+      </select></label>
+      <label><span>QC required</span><input type="checkbox" name="qc_required" <%= form.qc_required ? 'checked' : '' %> style="width:auto;min-height:unset"></label>
       <button>Tambah</button>
     </div>
   </form>
@@ -51,7 +55,7 @@
         <td data-label="Ukuran" class="num"><%= p.size_ml %>ml<% if (p.ml_used > 0) { %><br><span class="muted">sisa <%= p.ml_left %>ml</span><% } %></td>
         <td data-label="Beli" class="num"><%= rp(p.cost_price) %></td>
         <td data-label="Jual" class="num"><%= rp(p.sell_price) %></td>
-        <td data-label="Stok" class="num <%= p.is_active && p.stock <= p.min_stock ? 'warn' : '' %>"><%= p.stock %></td>
+        <td data-label="Stok" class="num"><%= p.stock %><% if (p.is_active && p.stock <= p.min_stock) { %> <span class="warn">menipis</span><% } %></td>
         <% if (canManage) { %>
         <td class="actions">
           <a class="btn" href="/products/<%= p.id %>/edit" aria-label="Ubah <%= p.brand %> <%= p.name %>">Ubah</a>

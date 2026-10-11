@@ -1,7 +1,7 @@
 <%- include('header') %>
 <h2>Decant</h2>
 <% if (error) { %>
-<div class="alert" role="alert"><%= error %></div>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
 <% } %>
 <% if (flash) { %>
 <div class="flash" role="status"><%= flash %></div>
@@ -21,17 +21,17 @@
   <form method="post" action="/decants">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <div class="form-grid">
-      <select name="parent_id" aria-label="Produk induk">
+      <label><span>Produk induk</span><select name="parent_id">
         <% parents.forEach(p => { %>
         <option value="<%= p.id %>"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml, sisa <%= p.ml_left %>ml</option>
         <% }) %>
-      </select>
-      <select name="child_id" aria-label="Produk decant">
+      </select></label>
+      <label><span>Produk decant</span><select name="child_id">
         <% children.forEach(c => { %>
         <option value="<%= c.id %>"><%= c.brand %> <%= c.name %> <%= c.size_ml %>ml, stok <%= c.stock %><%= c.parent_id ? '' : ' (belum ditautkan)' %></option>
         <% }) %>
-      </select>
-      <input name="qty" type="number" aria-label="Jumlah decant" inputmode="numeric" min="1" value="1" required>
+      </select></label>
+      <label><span>Jumlah</span><input name="qty" type="number" inputmode="numeric" min="1" value="1" required></label>
       <button>Buat decant</button>
     </div>
   </form>

@@ -1,7 +1,7 @@
 <%- include('header') %>
 <h2>Stock Opname</h2>
 <% if (error) { %>
-<div class="alert" role="alert"><%= error %></div>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
 <% } %>
 <% if (flash) { %>
 <div class="flash" role="status"><%= flash %></div>
@@ -24,7 +24,7 @@
   <form method="post" action="/opnames/open">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <div class="form-grid">
-      <input name="note" aria-label="Catatan sesi" placeholder="Catatan (misal: opname akhir bulan)" value="">
+      <label><span>Catatan (opsional)</span><input name="note" value="" placeholder="misal: opname akhir bulan"></label>
       <button>Buka sesi</button>
     </div>
   </form>

@@ -1,0 +1,44 @@
+<%- include('header') %>
+<h2>Quality Control</h2>
+<% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+<% if (error) { %><div class="alert"><%= error %></div><% } %>
+<div class="card">
+  <h3>Lot menunggu QC</h3>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th>Produk</th>
+        <th>Batch</th>
+        <th>Kedaluwarsa</th>
+        <th class="num">Qty</th>
+        <th>QC required</th>
+        <th>Dibuat</th>
+        <th class="actions">Tindakan</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% lots.forEach(l => { %>
+        <tr>
+          <td data-label="Produk"><%= l.brand %> <%= l.name %> <%= l.size_ml %>ml</td>
+          <td data-label="Batch"><%= l.batch_no || '-' %></td>
+          <td data-label="Kedaluwarsa"><%= l.expiry_str || '-' %></td>
+          <td data-label="Qty" class="num"><%= l.qty %></td>
+          <td data-label="QC required"><%= l.qc_required ? 'Ya' : 'Tidak' %></td>
+          <td data-label="Dibuat"><%= new Date(l.created_at).toLocaleString('id-ID') %></td>
+          <td class="actions">
+            <form class="inline-form" action="/qc/<%= l.id %>" method="post">
+              <input type="hidden" name="_csrf" value="<%= csrf %>">
+              <input type="text" name="note" placeholder="Catatan QC">
+              <button type="submit" name="status" value="pass">Pass</button>
+              <button type="submit" name="status" value="reject" class="danger">Reject</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (!lots.length) { %>
+        <tr><td colspan="7"><span class="muted">Tidak ada lot menunggu QC.</span></td></tr>
+      <% } %>
+    </tbody>
+  </table>
+</div>
+<%- include('footer') %>

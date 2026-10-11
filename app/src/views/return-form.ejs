@@ -1,7 +1,7 @@
 <%- include('header') %>
 <h2>Retur <%= sale.invoice_no %></h2>
 <% if (error) { %>
-<div class="alert" role="alert"><%= error %></div>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
 <% } %>
 
 <div class="card">
@@ -62,12 +62,12 @@
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <input type="hidden" name="sale_id" value="<%= sale.id %>">
     <div class="form-grid">
-      <select name="product_id" aria-label="Barang pengganti">
+      <label><span>Barang pengganti</span><select name="product_id">
         <% products.forEach(p => { %>
         <option value="<%= p.id %>"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml, stok <%= p.stock - (p.ml_used > 0 ? 1 : 0) %></option>
         <% }) %>
-      </select>
-      <input name="qty" type="number" inputmode="numeric" min="1" value="1" aria-label="Jumlah barang pengganti" required>
+      </select></label>
+      <label><span>Jumlah</span><input name="qty" type="number" inputmode="numeric" min="1" value="1" required></label>
       <button>Tambah</button>
     </div>
   </form>

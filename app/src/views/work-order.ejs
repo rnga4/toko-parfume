@@ -1,0 +1,53 @@
+<%- include('header') %>
+<h2>Work Order <%= wo.wo_no %></h2>
+<% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+<% if (error) { %><div class="alert"><%= error %></div><% } %>
+<div class="grid grid-2">
+  <div class="card">
+    <h3>Informasi</h3>
+    <dl class="sums">
+      <div><dt>Status</dt><dd><%= statusLabel[wo.status] %></dd></div>
+      <div><dt>Racikan</dt><dd><%= wo.formula_name %> v<%= wo.version %></dd></div>
+      <div><dt>Target</dt><dd><%= wo.target_brand %> <%= wo.target_name %> <%= wo.target_size %>ml</dd></div>
+      <div><dt>Target qty</dt><dd><%= wo.target_qty %> botol</dd></div>
+      <div><dt>Batch keluaran</dt><dd><%= wo.output_batch || '-' %></dd></div>
+      <div><dt>Kedaluwarsa keluaran</dt><dd><%= wo.output_expiry ? String(wo.output_expiry).slice(0,10) : '-' %></dd></div>
+      <div><dt>Maserasi</dt><dd><%= wo.maserasi_start ? String(wo.maserasi_start).slice(0,10) : '-' %> s/d <%= (wo.maserasi_end_est ? String(wo.maserasi_end_est).slice(0,10) : '-') %></dd></div>
+      <div><dt>Catatan</dt><dd><%= wo.note || '-' %></dd></div>
+      <div><dt>Dibuat</dt><dd><%= new Date(wo.created_at).toLocaleString('id-ID') %></dd></div>
+      <div><dt>Operator</dt><dd><%= wo.username || '-' %></dd></div>
+    </dl>
+    <div class="actions-row">
+      <% if (wo.status==='draft') { %>
+        <form action="/production/work-orders/<%= wo.id %>/start" method="post"><input type="hidden" name="_csrf" value="<%= csrf %>"><button type="submit">Mulai racik (konsumsi bahan)</button></form>
+        <form action="/production/work-orders/<%= wo.id %>/cancel" method="post"><input type="hidden" name="_csrf" value="<%= csrf %>"><button type="submit" class="danger">Batal WO</button></form>
+      <% } else if (wo.status==='racik') { %>
+        <form action="/production/work-orders/<%= wo.id %>/maserasi" method="post" class="form-grid one"><input type="hidden" name="_csrf" value="<%= csrf %>"><label><span>Mulai maserasi</span><input type="date" name="maserasi_start" value="<%= today %>" required></label><label><span>Estimasi selesai</span><input type="date" name="maserasi_end_est"></label><button type="submit">Masuk maserasi</button></form>
+        <form action="/production/work-orders/<%= wo.id %>/cancel" method="post"><input type="hidden" name="_csrf" value="<%= csrf %>"><button type="submit" class="danger">Batal WO</button></form>
+      <% } else if (wo.status==='maserasi') { %>
+        <form action="/production/work-orders/<%= wo.id %>/filling" method="post" class="form-grid one"><input type="hidden" name="_csrf" value="<%= csrf %>"><label><span>Batch keluaran</span><input type="text" name="output_batch" maxlength="50" placeholder="opsional"></label><label><span>Kedaluwarsa keluaran</span><input type="date" name="output_expiry"></label><button type="submit">Siap filling</button></form>
+        <form action="/production/work-orders/<%= wo.id %>/cancel" method="post"><input type="hidden" name="_csrf" value="<%= csrf %>"><button type="submit" class="danger">Batal WO</button></form>
+      <% } else if (wo.status==='filling') { %>
+        <form action="/production/work-orders/<%= wo.id %>/finish" method="post"><input type="hidden" name="_csrf" value="<%= csrf %>"><button type="submit">Selesaikan & masuk stok</button></form>
+        <form action="/production/work-orders/<%= wo.id %>/cancel" method="post"><input type="hidden" name="_csrf" value="<%= csrf %>"><button type="submit" class="danger">Batal WO</button></form>
+      <% } %>
+    </div>
+  </div>
+  <div class="card">
+    <h3>Kebutuhan bahan</h3>
+    <table class="stack">
+      <thead><tr><th>Bahan</th><th class="num">Dibutuhkan</th><th class="num">Terkonsumsi</th></tr></thead>
+      <tbody>
+        <% wo.materials.forEach(m => { %>
+          <tr>
+            <td data-label="Bahan"><%= m.brand %> <%= m.name %> <%= m.size_ml %>ml</td>
+            <td data-label="Dibutuhkan" class="num"><%= m.required_qty %></td>
+            <td data-label="Terkonsumsi" class="num"><%= m.consumed_qty %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <p class="muted mt">Saat "Mulai racik", sistem akan mengurangi stok bahan dari lot layak jual (urutan FEFO) dan mencatat alokasi lotnya. Bila bahan kurang, aksi dibatalkan.</p>
+  </div>
+</div>
+<%- include('footer') %>

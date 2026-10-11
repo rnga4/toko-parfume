@@ -66,10 +66,11 @@ router.post('/', requireAdmin, wrap(async (req, res) => {
     await renderProducts(req, res, { error: errors.join(' '), form: req.body }, 400);
     return;
   }
+  const p = parsed.product;
   await pool.query(
-    `INSERT INTO products (sku, brand, name, category, size_ml, cost_price, sell_price, stock, min_stock, batch_no, expiry_date, parent_product_id)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
-    parsed.values
+    `INSERT INTO products (sku, brand, name, category, size_ml, cost_price, sell_price, stock, min_stock, batch_no, expiry_date, parent_product_id, price_reseller, price_agen, price_grosir, qc_required)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)`,
+    [p.sku, p.brand, p.name, p.category, p.size_ml, p.cost_price, p.sell_price, p.stock, p.min_stock, p.batchNo, p.expiry, p.parentId, p.reseller, p.agen, p.grosir, p.qcRequired]
   );
   res.redirect('/products');
 }));
@@ -99,10 +100,8 @@ router.post('/:id/edit', requireAdmin, wrap(async (req, res) => {
   const { rows } = await pool.query('SELECT * FROM products WHERE id = $1', [id]);
   if (!rows[0]) return errorPage(res, 404, 'Produk tidak ditemukan', 'Produk itu tidak ada.');
 
-  const parsed = parseProductEdit(req.body);
-  const errors = parsed.errors ? parsed.errors.slice() : [];
-  if (!parsed.errors) await checkParent(parsed.values[10], id, parsed.values[3], errors);
-
+  const p = parsed.product;
+  await checkParent(p.parentId, id, p.category, errors);
   if (errors.length) {
     res.status(400);
     return res.render('product-edit', {
@@ -112,13 +111,12 @@ router.post('/:id/edit', requireAdmin, wrap(async (req, res) => {
       error: errors.join(' ')
     });
   }
-
   await pool.query(
-    `UPDATE products SET sku = $1, brand = $2, name = $3, category = $4, size_ml = $5,
-            cost_price = $6, sell_price = $7, min_stock = $8, batch_no = $9, expiry_date = $10,
-            parent_product_id = $11
-      WHERE id = $12`,
-    parsed.values.concat([id])
+    `UPDATE products SET sku=$1, brand=$2, name=$3, category=$4, size_ml=$5,
+            cost_price=$6, sell_price=$7, min_stock=$8, batch_no=$9, expiry_date=$10,
+            parent_product_id=$11, price_reseller=$12, price_agen=$13, price_grosir=$14, qc_required=$15
+       WHERE id=$16`,
+    [p.sku, p.brand, p.name, p.category, p.size_ml, p.cost_price, p.sell_price, p.min_stock, p.batchNo, p.expiry, p.parentId, p.reseller, p.agen, p.grosir, p.qcRequired, id]
   );
   res.redirect('/products');
 }));

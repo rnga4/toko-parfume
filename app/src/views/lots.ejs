@@ -1,0 +1,105 @@
+<%- include('header') %>
+<h2>Lot & Kedaluwarsa</h2>
+<div class="card">
+  <form class="form-grid" action="/lots" method="get">
+    <label><span>Filter</span>
+      <select name="f">
+        <option value="all" <%= filterKey==='all'?'selected':'' %>>Semua</option>
+        <option value="expiring" <%= filterKey==='expiring'?'selected':'' %>>Akan kedaluwarsa (30 hari)</option>
+        <option value="expired" <%= filterKey==='expired'?'selected':'' %>>Sudah kedaluwarsa</option>
+        <option value="ok" <%= filterKey==='ok'?'selected':'' %>>Baik (&gt;30 hari)</option>
+      </select>
+    </label>
+    <label><span>Produk</span>
+      <select name="product">
+        <option value="">Semua produk</option>
+        <% products.forEach(p => { %>
+          <option value="<%= p.id %>" <%= String(productFilter)===String(p.id)?'selected':'' %>><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</option>
+        <% }) %>
+      </select>
+    </label>
+    <button type="submit">Tampilkan</button>
+  </form>
+</div>
+<% if (error) { %><div class="alert"><%= error %></div><% } %>
+<% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+<div class="card">
+  <h3>Ringkasan lot</h3>
+  <div class="grid grid-2">
+    <div class="stat">
+      <span class="muted">Lot kadaluwarsa</span>
+      <h3><%= summary.expired %></h3>
+    </div>
+    <div class="stat">
+      <span class="muted">Akan kedaluwarsa ≤30 hari</span>
+      <h3><%= summary.soon %></h3>
+    </div>
+  </div>
+</div>
+<div class="card">
+  <h3>Daftar lot</h3>
+  <div class="table-wrap">
+    <table class="stack">
+      <thead>
+        <tr>
+          <th>Produk</th>
+          <th>Batch</th>
+          <th>Kedaluwarsa</th>
+          <th class="num">Qty</th>
+          <th>QC</th>
+          <th>Catatan</th>
+          <th>Dibuat</th>
+          <% if (canManage) { %><th class="actions">Aksi</th><% } %>
+        </tr>
+      </thead>
+      <tbody>
+        <% lots.forEach(l => { %>
+          <tr>
+            <td data-label="Produk"><%= l.brand %> <%= l.name %> <%= l.size_ml %>ml</td>
+            <td data-label="Batch"><%= l.batch_no || '-' %></td>
+            <td data-label="Kedaluwarsa"><%= l.expiry_str || '-' %> <% if (l.state==='expired') { %><span class="warn"> (kedaluwarsa)</span><% } else if (l.state==='soon') { %><span class="muted"> (≤30 hari)</span><% } %></td>
+            <td data-label="Qty" class="num"><%= l.qty %></td>
+            <td data-label="QC"><%= l.qc_status %></td>
+            <td data-label="Catatan"><%= l.qc_note || '-' %></td>
+            <td data-label="Dibuat"><%= new Date(l.created_at).toLocaleString('id-ID') %></td>
+            <% if (canManage) { %>
+            <td class="actions">
+              <form class="inline-form" action="/lots/<%= l.id %>" method="post">
+                <input type="hidden" name="_csrf" value="<%= csrf %>">
+                <input type="number" min="0" step="1" name="qty" value="<%= l.qty %>" aria-label="Qty">
+                <input type="text" name="batch_no" value="<%= l.batch_no || '' %>" placeholder="Batch">
+                <input type="date" name="expiry_date" value="<%= l.expiry_str || '' %>">
+                <button type="submit">Simpan</button>
+              </form>
+            </td>
+            <% } %>
+          </tr>
+        <% }) %>
+        <% if (!lots.length) { %>
+          <tr><td colspan="<%= canManage?7:6 %>"><span class="muted">Belum ada lot yang cocok dengan filter ini.</span></td></tr>
+        <% } %>
+      </tbody>
+    </table>
+  </div>
+</div>
+<% if (canManage) { %>
+<div class="card">
+  <h3>Tambah lot manual</h3>
+  <form class="form-grid" action="/lots" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label><span>Produk</span>
+      <select name="product_id" required>
+        <option value="">Pilih produk</option>
+        <% products.forEach(p => { %>
+          <option value="<%= p.id %>"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</option>
+        <% }) %>
+      </select>
+    </label>
+    <label><span>Qty</span><input type="number" min="0" step="1" name="qty" required></label>
+    <label><span>Batch</span><input type="text" name="batch_no" maxlength="50"></label>
+    <label><span>Kedaluwarsa</span><input type="date" name="expiry_date"></label>
+    <button type="submit">Tambahkan</button>
+  </form>
+</div>
+<% } %>
+<%- include('footer') %>

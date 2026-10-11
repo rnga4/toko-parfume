@@ -1,3 +1,61 @@
 </main>
+<script>
+(function () {
+  var alert = document.querySelector('.alert');
+  if (alert) {
+    alert.focus();
+  }
+  var toggle = document.getElementById('navtoggle');
+  if (toggle) {
+    var sync = function () {
+      toggle.setAttribute('aria-expanded', toggle.checked ? 'true' : 'false');
+    };
+    toggle.addEventListener('change', sync);
+    sync();
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && toggle.checked) {
+        toggle.checked = false;
+        sync();
+      }
+    });
+  }
+  var themeInputs = document.querySelectorAll('input[name="tema"]');
+  var themePopup = document.getElementById('themePopup');
+  var themeColor = document.getElementById('theme-color');
+  var schemeMeta = document.getElementById('color-scheme');
+  var themeMeta = {
+    light: '#1f1f2e',
+    telegram: '#17212b',
+    dark: '#0a0a0a',
+    sakura: '#ffedf8',
+    bamboo: '#fcf1d4',
+    cyberpunk: '#0d0816',
+    mingyu: '#fcf4e6',
+    ocean: '#d9f4fd',
+    retrolight: '#ecf2fc'
+  };
+  var applyTheme = function (theme) {
+    document.documentElement.setAttribute('data-theme', theme);
+    try { localStorage.setItem('tema', theme); } catch (e) {}
+    if (themeColor) { themeColor.setAttribute('content', themeMeta[theme] || ''); }
+    if (schemeMeta) { schemeMeta.setAttribute('content', theme === 'light' || theme === 'sakura' || theme === 'bamboo' || theme === 'mingyu' || theme === 'ocean' || theme === 'retrolight' ? 'light' : 'dark'); }
+    themeInputs.forEach(function (r) { r.checked = (r.value === theme); });
+  };
+  themeInputs.forEach(function (r) {
+    r.addEventListener('change', function () {
+      if (r.checked) {
+        applyTheme(r.value);
+        if (themePopup) { themePopup.open = false; }
+      }
+    });
+  });
+  applyTheme(document.documentElement.getAttribute('data-theme') || 'light');
+  document.addEventListener('keydown', function (e) {
+    if (themePopup && themePopup.open && e.key === 'Escape') {
+      themePopup.open = false;
+    }
+  });
+})();
+</script>
 </body>
 </html>

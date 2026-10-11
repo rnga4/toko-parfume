@@ -1,0 +1,23 @@
+<%- include('header') %>
+<h2>Log Audit</h2>
+<div class="card">
+  <table class="stack">
+    <thead>
+      <tr><th>Waktu</th><th>User</th><th>Aksi</th><th>Entitas</th><th>ID</th><th>Detail</th></tr>
+    </thead>
+    <tbody>
+      <% logs.forEach(l => { %>
+        <tr>
+          <td data-label="Waktu"><%= new Date(l.created_at).toLocaleString('id-ID') %></td>
+          <td data-label="User"><%= l.username || '-' %></td>
+          <td data-label="Aksi"><%= l.action %></td>
+          <td data-label="Entitas"><%= l.entity %></td>
+          <td data-label="ID"><%= l.entity_id || '-' %></td>
+          <td data-label="Detail"><%= l.detail || '-' %></td>
+        </tr>
+      <% }) %>
+      <% if (!logs.length) { %><tr><td colspan="6"><span class="muted">Belum ada log audit.</span></td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+<%- include('footer') %>

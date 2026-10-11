@@ -5,7 +5,14 @@
   <dl class="sums">
     <div><dt>Waktu</dt><dd><%= new Date(sale.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></dd></div>
     <div><dt>Kasir</dt><dd><%= sale.username || '-' %></dd></div>
+    <div><dt>Pelanggan</dt><dd><%= sale.customer || '-' %></dd></div>
     <div><dt>Metode bayar</dt><dd><%= paymentLabel %></dd></div>
+    <% if (sale.payment_method === 'tempo') { %>
+    <div><dt>Status</dt><dd class="<%= sale.paid_at ? '' : 'warn' %>"><%= sale.paid_at ? 'Lunas ' + new Date(sale.paid_at).toLocaleDateString('id-ID') : 'Belum lunas' %></dd></div>
+    <% if (sale.due_date) { %>
+    <div><dt>Jatuh tempo</dt><dd><%= new Date(sale.due_date).toLocaleDateString('id-ID') %></dd></div>
+    <% } %>
+    <% } %>
     <div><dt>Subtotal</dt><dd><%= rp(sale.subtotal) %></dd></div>
     <div><dt>Diskon</dt><dd><%= rp(sale.discount) %></dd></div>
     <div class="total"><dt>Total</dt><dd><%= rp(sale.total) %></dd></div>
@@ -43,10 +50,17 @@
   </table>
   <% } %>
   <div class="actions-row">
+    <a class="btn" href="/sales/<%= sale.id %>/struk">Cetak struk</a>
     <a class="btn" href="/sales">Ke daftar riwayat</a>
     <% if (isAdmin) { %>
     <a class="btn" href="/returns/new?sale=<%= sale.id %>">Buat retur atau tukar</a>
     <% } %>
   </div>
+  <% if (isAdmin && sale.payment_method === 'tempo' && !sale.paid_at) { %>
+  <form method="post" action="/piutang/<%= sale.id %>/lunas" class="mt">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <button type="submit">Tandai lunas</button>
+  </form>
+  <% } %>
 </div>
 <%- include('footer') %>

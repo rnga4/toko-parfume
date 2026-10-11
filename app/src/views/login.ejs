@@ -1,14 +1,14 @@
 <%- include('header') %>
 <h2>Masuk</h2>
 <% if (error) { %>
-<div class="alert" role="alert"><%= error %></div>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
 <% } %>
 <div class="card narrow">
   <form method="post" action="/login">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <div class="form-grid one">
-      <input name="username" aria-label="Username" placeholder="Username" value="<%= username %>" autocomplete="username" required>
-      <input name="password" type="password" aria-label="Kata sandi" placeholder="Kata sandi" autocomplete="current-password" required>
+      <label><span>Username</span><input name="username" value="<%= username %>" autocomplete="username" required></label>
+      <label><span>Kata sandi</span><input name="password" type="password" autocomplete="current-password" required></label>
       <button type="submit">Masuk</button>
     </div>
   </form>

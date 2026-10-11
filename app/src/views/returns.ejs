@@ -12,11 +12,11 @@
   <% } else { %>
   <form method="get" action="/returns/new">
     <div class="form-grid">
-      <select name="sale" aria-label="Penjualan">
+      <label><span>Penjualan</span><select name="sale">
         <% sales.forEach(s => { %>
         <option value="<%= s.id %>"><%= s.invoice_no %></option>
         <% }) %>
-      </select>
+      </select></label>
       <button>Buka</button>
     </div>
   </form>

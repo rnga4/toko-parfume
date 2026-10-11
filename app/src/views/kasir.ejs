@@ -2,7 +2,7 @@
 <% const available = products.filter(p => p.sellable > 0) %>
 <h2>Kasir</h2>
 <% if (error) { %>
-<div class="alert" role="alert"><%= error %></div>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
 <% } %>
 <% if (flash) { %>
 <div class="flash" role="status"><%= flash %></div>
@@ -19,12 +19,19 @@
   <form method="post" action="/kasir/cart/add">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <div class="form-grid">
-      <select name="product_id" aria-label="Produk">
-        <% products.forEach(p => { %>
-        <option value="<%= p.id %>"<%= p.sellable <= 0 ? ' disabled' : '' %>><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml, stok <%= p.sellable %></option>
-        <% }) %>
-      </select>
-      <input name="qty" type="number" inputmode="numeric" min="1" value="1" aria-label="Jumlah" required>
+      <label><span>Produk</span>
+        <input list="product-list" name="product_search" placeholder="Cari parfum (merk/nama/sku)" autocomplete="off" oninput="setProductId(this)">
+        <input type="hidden" name="product_id" id="product-id">
+        <datalist id="product-list">
+          <% products.forEach(p => { %>
+          <option data-id="<%= p.id %>" value="<%= p.brand %> <%= p.name %> <%= p.size_ml %>ml - <%= (p.sku||'').toString().replace(/"/g,'&quot;') %> (stok <%= p.sellable %>)"></option>
+          <% }) %>
+        </datalist>
+      </label>
+      <label><span>Tier harga</span><select name="tier">
+        <% tiers.forEach(t => { %><option value="<%= t.code %>"<%= t.code===tier?' selected':'' %>><%= t.label %></option><% }) %>
+      </select></label>
+      <label><span>Jumlah</span><input name="qty" type="number" inputmode="numeric" min="1" value="1" required></label>
       <button type="submit">Tambah</button>
     </div>
   </form>
@@ -93,12 +100,20 @@
     <form method="post" action="/kasir/checkout">
       <input type="hidden" name="_csrf" value="<%= csrf %>">
       <div class="form-grid one">
-        <input name="discount" type="number" inputmode="numeric" min="0" value="<%= discount %>" aria-label="Diskon dalam rupiah" placeholder="Diskon (Rp)">
-        <select name="payment" aria-label="Metode bayar">
+        <label><span>Diskon (Rp)</span><input name="discount" type="number" inputmode="numeric" min="0" value="<%= discount %>"></label>
+        <label><span>Metode bayar</span><select name="payment">
           <% payments.forEach(p => { %>
           <option value="<%= p.code %>"<%= payment === p.code ? ' selected' : '' %>><%= p.label %></option>
           <% }) %>
-        </select>
+        </select></label>
+        <label><span>Pelanggan</span><select name="customer_id">
+          <option value="">Pelanggan: tanpa nama</option>
+          <% customers.forEach(c => { %>
+          <option value="<%= c.id %>"<%= String(customerId) === String(c.id) ? ' selected' : '' %>><%= c.name %></option>
+          <% }) %>
+        </select></label>
+        <label><span>Jatuh tempo (opsional)</span><input name="due_date" type="date" value="<%= dueDate %>"></label>
+        <p class="state">Pelanggan dipakai untuk struk WhatsApp. Jatuh tempo hanya diisi kalau metode bayar tempo.</p>
       </div>
       <div class="actions-row">
         <button type="submit" formaction="/kasir/preview">Hitung total</button>
@@ -108,4 +123,31 @@
   </div>
   <% } %>
 </div>
+<script>
+function setProductId(el){
+  var list = el.list || document.getElementById('product-list');
+  if(!list) return;
+  var val = el.value;
+  for(var i=0;i<list.options.length;i++){
+    if(list.options[i].value === val){
+      var d = list.options[i].getAttribute('data-id');
+      var pid = document.getElementById('product-id');
+      if(pid) pid.value = d||'';
+      return;
+    }
+  }
+  var pid2 = document.getElementById('product-id');
+  if(pid2) pid2.value = '';
+}
+document.addEventListener('DOMContentLoaded', function(){
+  var form = document.querySelector('form[action="/kasir/cart/add"]');
+  if(form){
+    form.addEventListener('submit', function(e){
+      var pid = document.getElementById('product-id');
+      if(pid && !pid.value){ e.preventDefault(); alert('Pilih produk dari daftar pencarian terlebih dahulu'); }
+    });
+  }
+});
+</script>
+
 <%- include('footer') %>

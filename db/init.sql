@@ -169,7 +169,3 @@ CREATE UNIQUE INDEX idx_stock_opnames_one_open ON stock_opnames (status) WHERE s
 
 ALTER TABLE draft_items DROP CONSTRAINT IF EXISTS draft_items_kind_check;
 ALTER TABLE draft_items ADD CONSTRAINT draft_items_kind_check CHECK (kind IN ('sale','purchase','exchange'));
-
-INSERT INTO products (sku, brand, name, category, size_ml, cost_price, sell_price, stock, min_stock) VALUES
-('DIOR-SAU-100', 'Dior', 'Sauvage', 'EDP', 100, 1500000, 1900000, 5, 2),
-('YSL-LIB-90', 'YSL', 'Libre', 'EDP', 90, 1700000, 2150000, 2, 3);

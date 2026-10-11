@@ -1,0 +1,116 @@
+<%- include('header') %>
+<% const MONTHS = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember']; %>
+<h2>Laporan</h2>
+
+<div class="card">
+  <h3>Atur rentang tanggal</h3>
+  <form method="get" action="/laporan">
+    <div class="form-grid">
+      <label><span>Dari tanggal</span><input type="date" name="dari" value="<%= dari %>"></label>
+      <label><span>Sampai tanggal</span><input type="date" name="sampai" value="<%= sampai %>"></label>
+      <button type="submit">Tampilkan</button>
+      <a class="btn" href="/laporan">Reset bulan ini</a>
+    </div>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Ringkasan <%= dari === sampai ? dari : dari + ' s/d ' + sampai %></h3>
+  <dl class="sums">
+    <div><dt>Transaksi</dt><dd><%= summary.transaksi %></dd></div>
+    <div><dt>Omzet kotor</dt><dd><%= rp(summary.omzet) %></dd></div>
+    <div><dt>Retur (uang kembali)</dt><dd><%= rp(summary.retur) %></dd></div>
+    <div><dt>Omzet bersih</dt><dd><%= rp(summary.omzetNet) %></dd></div>
+    <div class="total"><dt>Laba kotor</dt><dd><%= rp(summary.laba) %></dd></div>
+  </dl>
+  <p class="state">Laba kotor dihitung dari harga jual dikurangi harga beli, termasuk pengurangan dari retur.</p>
+  <p><a class="btn" href="/laporan/export?jenis=ringkasan&dari=<%= dari %>&sampai=<%= sampai %>">Unduh CSV ringkasan</a></p>
+</div>
+
+<div class="card">
+  <h3>Omzet dan laba harian</h3>
+  <% if (!harian.length) { %>
+  <p class="state">Belum ada penjualan atau retur pada rentang tanggal ini.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Tanggal</th>
+        <th scope="col" class="num">Transaksi</th>
+        <th scope="col" class="num">Omzet bersih</th>
+        <th scope="col" class="num">Laba kotor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% harian.forEach(r => { %>
+      <tr>
+        <td data-label="Tanggal"><%= r.period %></td>
+        <td data-label="Transaksi" class="num"><%= r.n %></td>
+        <td data-label="Omzet bersih" class="num"><%= rp(r.omzetNet) %></td>
+        <td data-label="Laba kotor" class="num <%= r.laba < 0 ? 'warn' : '' %>"><%= rp(r.laba) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+  <p class="mt"><a class="btn" href="/laporan/export?jenis=harian&dari=<%= dari %>&sampai=<%= sampai %>">Unduh CSV harian</a></p>
+</div>
+
+<div class="card">
+  <h3>Omzet dan laba bulanan</h3>
+  <% if (!bulanan.length) { %>
+  <p class="state">Belum ada penjualan atau retur pada rentang tanggal ini.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Bulan</th>
+        <th scope="col" class="num">Transaksi</th>
+        <th scope="col" class="num">Omzet bersih</th>
+        <th scope="col" class="num">Laba kotor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% bulanan.forEach(r => { %>
+      <tr>
+        <td data-label="Bulan"><%= MONTHS[Number(r.period.slice(5)) - 1] %> <%= r.period.slice(0, 4) %></td>
+        <td data-label="Transaksi" class="num"><%= r.n %></td>
+        <td data-label="Omzet bersih" class="num"><%= rp(r.omzetNet) %></td>
+        <td data-label="Laba kotor" class="num <%= r.laba < 0 ? 'warn' : '' %>"><%= rp(r.laba) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+  <p class="mt"><a class="btn" href="/laporan/export?jenis=bulanan&dari=<%= dari %>&sampai=<%= sampai %>">Unduh CSV bulanan</a></p>
+</div>
+
+<div class="card">
+  <h3>Produk terlaris</h3>
+  <% if (!terlaris.length) { %>
+  <p class="state">Belum ada produk terjual pada rentang tanggal ini.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Produk</th>
+        <th scope="col" class="num">Terjual</th>
+        <th scope="col" class="num">Omzet</th>
+        <th scope="col" class="num">Laba kotor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% terlaris.forEach(r => { %>
+      <tr>
+        <td data-label="Produk"><%= r.brand %> <%= r.name %> <%= r.size_ml %>ml<br><span class="muted"><%= r.sku %></span></td>
+        <td data-label="Terjual" class="num"><%= r.qty %></td>
+        <td data-label="Omzet" class="num"><%= rp(r.omzet) %></td>
+        <td data-label="Laba kotor" class="num <%= r.laba < 0 ? 'warn' : '' %>"><%= rp(r.laba) %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+  <p class="mt"><a class="btn" href="/laporan/export?jenis=terlaris&dari=<%= dari %>&sampai=<%= sampai %>">Unduh CSV terlaris</a></p>
+</div>
+<%- include('footer') %>

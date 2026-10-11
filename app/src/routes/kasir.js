@@ -2,7 +2,13 @@ const express = require('express');
 const { pool, withTransaction } = require('../lib/db');
 const { wrap, csrfOk, errorPage, readInt, DomainError } = require('../lib/http');
 const { requireAuth } = require('../lib/auth');
-const { PAYMENTS, PAYMENT_LABEL, parseCheckout, parseQty } = require('../lib/validate');
+const { PAYMENTS, PAYMENTS_WITH_TEMPO, PAYMENT_LABEL, TIERS, TIER_LABEL, parseCheckout, parseQty } = require('../lib/validate');
+function tierPrice(product, tier) {
+  if (tier === 'reseller' && product.price_reseller > 0) return product.price_reseller;
+  if (tier === 'agen' && product.price_agen > 0) return product.price_agen;
+  if (tier === 'grosir' && product.price_grosir > 0) return product.price_grosir;
+  return product.sell_price;
+}
 
 const router = express.Router();
 
@@ -17,9 +23,9 @@ const FLASH = {
 };
 
 async function renderKasir(req, res, extra, status) {
-  const [products, cart] = await Promise.all([
+  const [products, cart, customers] = await Promise.all([
     pool.query(
-      `SELECT id, sku, brand, name, size_ml, stock, ml_used,
+      `SELECT id, sku, brand, name, size_ml, stock, ml_used, sell_price, price_reseller, price_agen, price_grosir,
               (stock - CASE WHEN ml_used > 0 THEN 1 ELSE 0 END) AS sellable
          FROM products WHERE is_active ORDER BY brand, name`
     ),
@@ -31,21 +37,28 @@ async function renderKasir(req, res, extra, status) {
         WHERE d.user_id = $1 AND d.kind = 'sale'
         ORDER BY p.brand, p.name`,
       [req.user.id]
-    )
+    ),
+    pool.query('SELECT id, name FROM customers ORDER BY name')
   ]);
   const subtotal = cart.rows.reduce((sum, row) => sum + row.qty * row.unit_price, 0);
   const requested = extra.discount !== undefined ? extra.discount : 0;
   const discount = Math.max(0, Math.min(requested, subtotal));
   const total = subtotal - discount;
+  const choices = req.user.role === 'admin' ? PAYMENTS_WITH_TEMPO : PAYMENTS;
   if (status) res.status(status);
   res.render('kasir', Object.assign({
     products: products.rows,
     cart: cart.rows,
+    customers: customers.rows,
     subtotal,
     discount,
     total,
     payment: 'cash',
-    payments: PAYMENTS.map((code) => ({ code, label: PAYMENT_LABEL[code] })),
+    tier: 'retail',
+    tiers: TIERS.map((t) => ({ code: t, label: TIER_LABEL[t] || t })),
+    payments: choices.map((code) => ({ code, label: PAYMENT_LABEL[code] })),
+    customerId: '',
+    dueDate: '',
     flash: null,
     error: null
   }, extra));
@@ -73,7 +86,7 @@ router.post('/cart/add', wrap(async (req, res) => {
   }
 
   const { rows } = await pool.query(
-    'SELECT id, brand, name, stock, ml_used, is_active FROM products WHERE id = $1',
+    'SELECT id, brand, name, stock, ml_used, is_active, sell_price, price_reseller, price_agen, price_grosir FROM products WHERE id = $1',
     [productId]
   );
   const product = rows[0];
@@ -81,6 +94,8 @@ router.post('/cart/add', wrap(async (req, res) => {
     return renderKasir(req, res, { error: 'Produk itu tidak ditemukan atau sudah tidak aktif.' }, 400);
   }
   const sellableQty = product.stock - (product.ml_used > 0 ? 1 : 0);
+  const tier = (req.body.tier && TIERS.includes(req.body.tier)) ? req.body.tier : 'retail';
+  const price = tierPrice(product, tier);
 
   const inCart = await pool.query(
     'SELECT qty FROM draft_items WHERE user_id = $1 AND kind = $2 AND product_id = $3',
@@ -95,11 +110,11 @@ router.post('/cart/add', wrap(async (req, res) => {
   }
 
   await pool.query(
-    `INSERT INTO draft_items (user_id, kind, product_id, qty, unit_price)
-     VALUES ($1, 'sale', $2, $3, (SELECT sell_price FROM products WHERE id = $2))
-     ON CONFLICT (user_id, kind, product_id)
-     DO UPDATE SET qty = draft_items.qty + EXCLUDED.qty, unit_price = EXCLUDED.unit_price`,
-    [req.user.id, productId, qty]
+      `INSERT INTO draft_items (user_id, kind, product_id, qty, unit_price)
+       VALUES ($1, 'sale', $2, $3, $4)
+       ON CONFLICT (user_id, kind, product_id)
+       DO UPDATE SET qty = draft_items.qty + EXCLUDED.qty, unit_price = EXCLUDED.unit_price`,
+    [req.user.id, productId, qty, price]
   );
   res.redirect('/kasir?ok=added');
 }));
@@ -156,17 +171,21 @@ router.post('/preview', wrap(async (req, res) => {
     [req.user.id, 'sale']
   );
   const subtotal = Number(rows[0].s);
-  const parsed = parseCheckout(req.body, subtotal);
+  const parsed = parseCheckout(req.body, subtotal, { allowTempo: req.user.role === 'admin' });
   if (parsed.errors) {
     return renderKasir(req, res, {
       error: parsed.errors.join(' '),
       discount: Number(req.body.discount) || 0,
-      payment: req.body.payment || 'cash'
+      payment: req.body.payment || 'cash',
+      customerId: req.body.customer_id || '',
+      dueDate: req.body.due_date || ''
     }, 400);
   }
   await renderKasir(req, res, {
     discount: parsed.discount,
     payment: parsed.payment,
+    customerId: String(parsed.customerId || ''),
+    dueDate: parsed.dueDate || '',
     flash: 'Total dihitung ulang dari isi keranjang.'
   });
 }));
@@ -177,7 +196,7 @@ router.post('/checkout', wrap(async (req, res) => {
   try {
     const sale = await withTransaction(async (client) => {
       const { rows: items } = await client.query(
-        `SELECT d.product_id, d.qty, d.unit_price, p.brand, p.name, p.stock, p.ml_used, p.is_active
+        `SELECT d.product_id, d.qty, d.unit_price, p.brand, p.name, p.stock, p.ml_used, p.is_active, p.cost_price
            FROM draft_items d
            JOIN products p ON p.id = d.product_id
           WHERE d.user_id = $1 AND d.kind = 'sale'
@@ -188,7 +207,7 @@ router.post('/checkout', wrap(async (req, res) => {
 
       const ids = items.map((i) => i.product_id);
       const { rows: locked } = await client.query(
-        'SELECT id, stock, ml_used, is_active FROM products WHERE id = ANY($1) ORDER BY id FOR UPDATE',
+        'SELECT id, stock, ml_used, is_active, cost_price FROM products WHERE id = ANY($1) ORDER BY id FOR UPDATE',
         [ids]
       );
       const stockById = new Map(locked.map((r) => [r.id, r]));
@@ -205,8 +224,12 @@ router.post('/checkout', wrap(async (req, res) => {
       }
 
       const subtotal = items.reduce((sum, i) => sum + i.qty * i.unit_price, 0);
-      const parsed = parseCheckout(req.body, subtotal);
+      const parsed = parseCheckout(req.body, subtotal, { allowTempo: req.user.role === 'admin' });
       if (parsed.errors) throw new DomainError(400, 'Data pembayaran tidak valid', parsed.errors.join(' '));
+      if (parsed.customerId) {
+        const { rows: foundCustomer } = await client.query('SELECT id FROM customers WHERE id = $1', [parsed.customerId]);
+        if (!foundCustomer.length) throw new DomainError(400, 'Pelanggan tidak valid', 'Pelanggan yang dipilih tidak ditemukan. Muat ulang halaman Kasir, lalu pilih lagi.');
+      }
 
       const { rows: seq } = await client.query("SELECT nextval('sales_id_seq') AS id");
       const saleId = seq[0].id;
@@ -215,15 +238,16 @@ router.post('/checkout', wrap(async (req, res) => {
       const total = subtotal - parsed.discount;
 
       await client.query(
-        `INSERT INTO sales (id, invoice_no, user_id, subtotal, discount, total, payment_method)
-         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
-        [saleId, invoice, req.user.id, subtotal, parsed.discount, total, parsed.payment]
+        `INSERT INTO sales (id, invoice_no, user_id, subtotal, discount, total, payment_method, customer_id, due_date, paid_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)`,
+        [saleId, invoice, req.user.id, subtotal, parsed.discount, total, parsed.payment, parsed.customerId, parsed.dueDate,
+         parsed.payment === 'tempo' ? null : new Date()]
       );
 
       for (const item of items) {
         await client.query(
-          'INSERT INTO sale_items (sale_id, product_id, qty, price) VALUES ($1,$2,$3,$4)',
-          [saleId, item.product_id, item.qty, item.unit_price]
+          'INSERT INTO sale_items (sale_id, product_id, qty, price, hpp) VALUES ($1,$2,$3,$4,$5)',
+          [saleId, item.product_id, item.qty, item.unit_price, item.cost_price]
         );
         const updated = await client.query(
           `UPDATE products SET stock = stock - $1
@@ -246,7 +270,13 @@ router.post('/checkout', wrap(async (req, res) => {
     res.redirect(`/sales?ok=sale&invoice=${encodeURIComponent(sale.invoice)}`);
   } catch (err) {
     if (err instanceof DomainError) {
-      return renderKasir(req, res, { error: err.message, discount: Number(req.body.discount) || 0, payment: req.body.payment || 'cash' }, err.status);
+      return renderKasir(req, res, {
+        error: err.message,
+        discount: Number(req.body.discount) || 0,
+        payment: req.body.payment || 'cash',
+        customerId: req.body.customer_id || '',
+        dueDate: req.body.due_date || ''
+      }, err.status);
     }
     throw err;
   }

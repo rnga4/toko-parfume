@@ -1,0 +1,56 @@
+<%- include('header') %>
+<h2>Pelanggan</h2>
+<% if (error) { %>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
+<% } %>
+
+<div class="card">
+  <h3><%= edit ? 'Ubah pelanggan' : 'Tambah pelanggan' %></h3>
+  <form method="post" action="<%= edit ? '/customers/' + edit.id : '/customers' %>">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <div class="form-grid">
+      <label><span>Nama</span><input name="name" value="<%= form.name || '' %>" required></label>
+      <label><span>Telepon (untuk WhatsApp)</span><input name="phone" value="<%= form.phone || '' %>"></label>
+      <label><span>Alamat</span><input name="address" value="<%= form.address || '' %>"></label>
+      <button type="submit"><%= edit ? 'Simpan' : 'Tambah' %></button>
+    </div>
+  </form>
+  <% if (edit) { %>
+  <p class="mt"><a class="btn" href="/customers">Batal ubah, kembali ke daftar</a></p>
+  <% } else { %>
+  <p class="state mt">Nama pelanggan dipakai di kasir, riwayat penjualan, struk, dan daftar piutang. Telepon dipakai untuk mengirim struk lewat WhatsApp.</p>
+  <% } %>
+</div>
+
+<div class="card">
+  <h3>Daftar pelanggan</h3>
+  <% if (!customers.length) { %>
+  <p class="state">Belum ada pelanggan tercatat. Isi form di atas untuk menambah pelanggan pertama.</p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Nama</th>
+        <th scope="col">Telepon</th>
+        <th scope="col">Alamat</th>
+        <th scope="col" class="num">Transaksi</th>
+        <th scope="col" aria-label="Aksi"></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% customers.forEach(c => { %>
+      <tr>
+        <td data-label="Nama"><%= c.name %></td>
+        <td data-label="Telepon"><%= c.phone || '-' %></td>
+        <td data-label="Alamat"><%= c.address || '-' %></td>
+        <td data-label="Transaksi" class="num"><%= c.sales %></td>
+        <td class="actions">
+          <a class="btn" href="/customers/<%= c.id %>">Ubah</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('footer') %>

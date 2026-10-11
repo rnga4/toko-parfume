@@ -1,0 +1,116 @@
+<%- include('header') %>
+<h2>Produksi</h2>
+<% if (error) { %><div class="alert"><%= error %></div><% } %>
+<% if (flash) { %><div class="flash"><%= flash %></div><% } %>
+<div class="grid">
+  <div class="card">
+    <h3>Buat work order</h3>
+    <form class="form-grid" action="/production/work-orders" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <label><span>Pilih racikan aktif</span>
+        <select name="formula_id" required>
+          <option value="">Pilih racikan</option>
+          <% activeFormulas.forEach(f => { %>
+            <option value="<%= f.id %>">#<%= f.id %> - <%= f.name %> (v<%= f.version %>) - <%= f.target_brand %> <%= f.target_name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label><span>Target jumlah botol jadi</span><input type="number" min="1" step="1" name="target_qty" value="1" required></label>
+      <label class="one"><span>Catatan</span><input type="text" name="note" maxlength="500"></label>
+      <button type="submit">Buat work order</button>
+    </form>
+    <p class="muted mt">Hanya racikan yang aktif bisa dipakai untuk membuat work order.</p>
+  </div>
+  <div class="card">
+    <h3>Tambah racikan</h3>
+    <form action="/production/formulas" method="post">
+      <input type="hidden" name="_csrf" value="<%= csrf %>">
+      <div class="form-grid">
+        <label><span>Nama racikan</span><input type="text" name="name" maxlength="150" required></label>
+        <label><span>Produk jadi (target)</span>
+          <select name="target_product_id" required>
+            <option value="">Pilih produk jadi</option>
+            <% products.forEach(p => { %>
+              <option value="<%= p.id %>"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml (<%= p.category %>)</option>
+            <% }) %>
+          </select>
+        </label>
+      </div>
+      <p class="muted mt">Baris bahan (minimum 1, total persentase 100%). Biarkan kosong jika tidak perlu baris tambahan.</p>
+      <table class="stack mt">
+        <thead>
+          <tr><th>Bahan</th><th>Persentase (%)</th></tr>
+        </thead>
+        <tbody>
+          <% for (let r=0;r<6;r++) { %>
+            <tr>
+              <td data-label="Bahan">
+                <select name="material_id">
+                  <option value="">--pilih bahan--</option>
+                  <% products.forEach(p => { %><option value="<%= p.id %>"><%= p.sku %> - <%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</option><% }) %>
+                </select>
+              </td>
+              <td data-label="Persentase"><input type="text" inputmode="decimal" name="pct" placeholder="20.000"></td>
+            </tr>
+          <% } %>
+        </tbody>
+      </table>
+      <label class="mt one"><span>Catatan</span><input type="text" name="notes" maxlength="500"></label>
+      <div class="actions-row"><button type="submit">Simpan racikan</button></div>
+    </form>
+  </div>
+</div>
+<div class="card">
+  <h3>Daftar racikan</h3>
+  <table class="stack">
+    <thead>
+      <tr><th>Nama</th><th>Target</th><th>Versi</th><th>Aktif</th><th>Bahan</th><th>Dibuat</th><th class="actions">Aksi</th></tr>
+    </thead>
+    <tbody>
+      <% formulas.forEach(f => { %>
+        <tr>
+          <td data-label="Nama"><%= f.name %></td>
+          <td data-label="Target"><%= f.target_brand %> <%= f.target_name %> <%= f.target_size %>ml</td>
+          <td data-label="Versi">v<%= f.version %></td>
+          <td data-label="Aktif"><%= f.is_active ? 'Ya' : 'Tidak' %></td>
+          <td data-label="Bahan"><%= f.materials %></td>
+          <td data-label="Dibuat"><%= new Date(f.created_at).toLocaleString('id-ID') %></td>
+          <td class="actions">
+            <% if (!f.is_active) { %>
+              <form class="inline-form" action="/production/formulas/<%= f.id %>/activate" method="post">
+                <input type="hidden" name="_csrf" value="<%= csrf %>"><button type="submit">Aktifkan</button>
+              </form>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+      <% if (!formulas.length) { %><tr><td colspan="7"><span class="muted">Belum ada racikan.</span></td></tr><% } %>
+    </tbody>
+  </table>
+</div>
+<div class="card">
+  <h3>Work order</h3>
+  <% groups.forEach(g => { %>
+    <h4><%= g.label %></h4>
+    <table class="stack mt">
+      <thead>
+        <tr><th>No WO</th><th>Racikan</th><th>Target</th><th class="num">Qty</th><th>Operator</th><th>Waktu</th><th class="actions">Detail</th></tr>
+      </thead>
+      <tbody>
+        <% g.orders.forEach(o => { %>
+          <tr>
+            <td data-label="No WO"><%= o.wo_no %></td>
+            <td data-label="Racikan"><%= o.formula_name %></td>
+            <td data-label="Target"><%= o.target_brand %> <%= o.target_name %> <%= o.target_size %>ml</td>
+            <td data-label="Qty" class="num"><%= o.target_qty %></td>
+            <td data-label="Operator"><%= o.username || '-' %></td>
+            <td data-label="Waktu"><%= new Date(o.created_at).toLocaleString('id-ID') %></td>
+            <td class="actions"><a class="btn link" href="/production/work-orders/<%= o.id %>">Buka</a></td>
+          </tr>
+        <% }) %>
+        <% if (!g.orders.length) { %><tr><td colspan="7"><span class="muted">Tidak ada.</span></td></tr><% } %>
+      </tbody>
+    </table>
+  <% }) %>
+</div>
+<%- include('footer') %>

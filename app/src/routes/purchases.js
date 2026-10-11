@@ -2,7 +2,7 @@ const express = require('express');
 const { pool, withTransaction } = require('../lib/db');
 const { wrap, csrfOk, errorPage, readInt, DomainError } = require('../lib/http');
 const { requireAuth, requireAdmin } = require('../lib/auth');
-const { parseQty } = require('../lib/validate');
+const { parseQty, parsePurchasePayment, PAYMENT_LABEL } = require('../lib/validate');
 
 const router = express.Router();
 
@@ -45,6 +45,8 @@ async function renderDraft(req, res, extra, status) {
     suppliers: suppliers.rows,
     items: items.rows,
     total,
+    payment: 'cash',
+    dueDate: '',
     flash: null,
     error: null
   }, extra));
@@ -52,7 +54,8 @@ async function renderDraft(req, res, extra, status) {
 
 router.get('/', wrap(async (req, res) => {
   const { rows } = await pool.query(
-    `SELECT p.id, p.invoice_no, p.total, p.created_at, s.name AS supplier, u.username,
+    `SELECT p.id, p.invoice_no, p.total, p.created_at, p.payment_method, p.paid_at, p.due_date,
+            s.name AS supplier, u.username,
             (SELECT COUNT(*)::int FROM purchase_items pi WHERE pi.purchase_id = p.id) AS items
        FROM purchases p
        LEFT JOIN suppliers s ON s.id = p.supplier_id
@@ -60,7 +63,11 @@ router.get('/', wrap(async (req, res) => {
       ORDER BY p.created_at DESC
       LIMIT 200`
   );
-  res.render('purchases', { purchases: rows, flash: LIST_FLASH[req.query.ok] ? LIST_FLASH[req.query.ok](req) : null });
+  res.render('purchases', {
+    purchases: rows,
+    flash: LIST_FLASH[req.query.ok] ? LIST_FLASH[req.query.ok](req) : null,
+    paymentLabel: PAYMENT_LABEL
+  });
 }));
 
 router.get('/new', wrap(async (req, res) => {
@@ -165,6 +172,9 @@ router.post('/commit', wrap(async (req, res) => {
       const supplierId = readInt(String(req.body.supplier_id || ''), 1);
       if (supplierId === null) throw new DomainError(400, 'Supplier belum dipilih', 'Pilih supplier yang menjadi sumber pembelian ini.');
 
+      const pay = parsePurchasePayment(req.body);
+      if (pay.errors) throw new DomainError(400, 'Metode bayar tidak valid', pay.errors.join(' '));
+
       const supplier = await client.query('SELECT id FROM suppliers WHERE id = $1 AND is_active', [supplierId]);
       if (!supplier.rows[0]) throw new DomainError(400, 'Supplier tidak ditemukan', 'Supplier itu sudah tidak aktif. Pilih supplier lain.');
 
@@ -185,8 +195,9 @@ router.post('/commit', wrap(async (req, res) => {
       const total = items.rows.reduce((sum, i) => sum + i.qty * i.unit_price, 0);
 
       await client.query(
-        'INSERT INTO purchases (id, invoice_no, supplier_id, user_id, total) VALUES ($1,$2,$3,$4,$5)',
-        [purchaseId, invoice, supplierId, req.user.id, total]
+        `INSERT INTO purchases (id, invoice_no, supplier_id, user_id, total, payment_method, due_date, paid_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
+        [purchaseId, invoice, supplierId, req.user.id, total, pay.payment, pay.dueDate, pay.payment === 'tempo' ? null : new Date()]
       );
 
       for (const item of items.rows) {
@@ -211,7 +222,11 @@ router.post('/commit', wrap(async (req, res) => {
     res.redirect(`/purchases?ok=committed&invoice=${encodeURIComponent(result.invoice)}`);
   } catch (err) {
     if (err instanceof DomainError) {
-      return renderDraft(req, res, { error: err.message }, err.status);
+      return renderDraft(req, res, {
+        error: err.message,
+        payment: req.body.payment || 'cash',
+        dueDate: req.body.due_date || ''
+      }, err.status);
     }
     throw err;
   }
@@ -241,7 +256,11 @@ router.get('/:id', wrap(async (req, res) => {
     [id]
   );
 
-  res.render('purchase-detail', { purchase, items: items.rows });
+  res.render('purchase-detail', {
+    purchase,
+    items: items.rows,
+    paymentLabel: PAYMENT_LABEL[purchase.payment_method] || purchase.payment_method
+  });
 }));
 
 module.exports = router;

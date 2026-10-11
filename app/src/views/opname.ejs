@@ -23,7 +23,7 @@
 <div class="card">
   <h3>Hitungan fisik</h3>
   <p class="state">Kosongkan kolom hitung fisik pada produk yang belum Anda hitung. Stok sistem diambil ulang saat sesi diselesaikan, jadi barang yang terjual selama sesi tetap ikut terhitung.</p>
-  <form method="post" action="/opnames/<%= opname.id %>/count">
+  <form method="post" action="/opnames/<%= opname.id %>/count" onsubmit="if (event.submitter && event.submitter.formaction && event.submitter.formaction.indexOf('finish') !== -1) return confirm('Selesaikan opname? Selisih hitungan fisik langsung menjadi penyesuaian stok dan sesi tidak bisa diubah lagi.');">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <table class="stack">
       <thead>
@@ -48,7 +48,7 @@
     </table>
     <div class="actions-row">
       <button>Simpan hitungan</button>
-      <button type="submit" formaction="/opnames/<%= opname.id %>/finish" onsubmit="return confirm('Selesaikan opname? Selisih hitungan fisik langsung menjadi penyesuaian stok dan sesi tidak bisa diubah lagi.')">Selesaikan opname</button>
+      <button type="submit" formaction="/opnames/<%= opname.id %>/finish">Selesaikan opname</button>
       <a class="btn" href="/opnames">Ke daftar sesi</a>
     </div>
   </form>

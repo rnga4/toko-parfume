@@ -1,7 +1,7 @@
 <%- include('header') %>
 <h2>Pembelian baru</h2>
 <% if (error) { %>
-<div class="alert" role="alert"><%= error %></div>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
 <% } %>
 <% if (flash) { %>
 <div class="flash" role="status"><%= flash %></div>
@@ -15,13 +15,13 @@
   <form method="post" action="/purchases/item/add">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <div class="form-grid">
-      <select name="product_id" aria-label="Produk">
+      <label><span>Produk</span><select name="product_id">
         <% products.forEach(p => { %>
         <option value="<%= p.id %>"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml, harga beli <%= rp(p.cost_price) %></option>
         <% }) %>
-      </select>
-      <input name="qty" type="number" inputmode="numeric" min="1" value="1" aria-label="Jumlah" required>
-      <input name="cost" type="number" inputmode="numeric" min="0" placeholder="Harga beli (Rp)" aria-label="Harga beli dalam rupiah" required>
+      </select></label>
+      <label><span>Jumlah</span><input name="qty" type="number" inputmode="numeric" min="1" value="1" required></label>
+      <label><span>Harga beli (Rp)</span><input name="cost" type="number" inputmode="numeric" min="0" required></label>
       <button type="submit">Tambah</button>
     </div>
     <p class="mt">Kalau produk sudah ada di daftar, isiannya akan menimpa jumlah dan harga lama.</p>
@@ -100,12 +100,18 @@
   <form method="post" action="/purchases/commit">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <div class="form-grid one">
-      <select name="supplier_id" aria-label="Supplier" required>
+      <label><span>Supplier</span><select name="supplier_id" required>
         <option value="">Pilih supplier</option>
         <% suppliers.forEach(s => { %>
         <option value="<%= s.id %>"><%= s.name %></option>
         <% }) %>
-      </select>
+      </select></label>
+      <label><span>Metode bayar</span><select name="payment">
+        <option value="cash"<%= payment === 'cash' ? ' selected' : '' %>>Tunai</option>
+        <option value="tempo"<%= payment === 'tempo' ? ' selected' : '' %>>Tempo (bayar nanti)</option>
+      </select></label>
+      <label><span>Jatuh tempo (opsional)</span><input name="due_date" type="date" value="<%= dueDate %>"></label>
+      <p class="state">Tanggal jatuh tempo diwajibkan kalau metode bayar tempo.</p>
     </div>
     <div class="actions-row">
       <button type="submit">Simpan pembelian</button>

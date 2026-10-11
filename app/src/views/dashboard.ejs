@@ -1,11 +1,36 @@
 <%- include('header') %>
 <h2>Dashboard</h2>
-<div class="grid">
+<div class="grid <%= isAdmin ? 'grid-5' : 'grid-4' %>">
   <div class="card stat stat-lead"><small>Omzet Hari Ini</small><h3 class="num"><%= rp(omzet) %></h3></div>
+  <% if (isAdmin) { %>
+  <div class="card stat"><small>Laba Kotor Hari Ini</small><h3 class="num <%= laba < 0 ? 'warn' : '' %>"><%= rp(laba) %></h3></div>
+  <% } %>
   <div class="card stat"><small>Total Produk</small><h3 class="num"><%= totalProduk %></h3></div>
   <div class="card stat"><small>Stok Menipis</small><h3 class="num <%= lowStock.length ? 'warn' : '' %>"><%= lowStock.length %></h3></div>
   <div class="card stat"><small>Kedaluwarsa</small><h3 class="num <%= expiring.length ? 'warn' : '' %>"><%= expiring.length %></h3></div>
 </div>
+<% if (isAdmin) { %>
+<div class="card mt">
+  <h3>Produk Terlaris Bulan Ini</h3>
+  <% if (terlaris.length) { %>
+  <table class="stack">
+    <thead><tr><th scope="col">Produk</th><th scope="col" class="num">Terjual</th><th scope="col" class="num">Omzet</th></tr></thead>
+    <tbody>
+    <% terlaris.forEach(p => { %>
+      <tr>
+        <td data-label="Produk"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</td>
+        <td data-label="Terjual" class="num"><%= p.qty %></td>
+        <td data-label="Omzet" class="num"><%= rp(p.omzet) %></td>
+      </tr>
+    <% }) %>
+    </tbody>
+  </table>
+  <% } else { %>
+  <p class="state">Belum ada penjualan bulan ini, jadi daftar produk terlaris masih kosong.</p>
+  <% } %>
+  <p class="mt"><a class="btn" href="/laporan">Buka laporan lengkap</a></p>
+</div>
+<% } %>
 <div class="card mt">
   <h3>Stok Menipis</h3>
   <% if (lowStock.length) { %>
@@ -15,7 +40,7 @@
     <% lowStock.forEach(p => { %>
       <tr>
         <td data-label="Produk"><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</td>
-        <td data-label="Stok" class="num warn"><%= p.stock %></td>
+        <td data-label="Stok" class="num"><%= p.stock %><% if (p.is_active && p.stock <= p.min_stock) { %> <span class="warn">menipis</span><% } %></td>
         <td data-label="Min" class="num"><%= p.min_stock %></td>
       </tr>
     <% }) %>

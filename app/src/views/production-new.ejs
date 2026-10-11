@@ -1,0 +1,40 @@
+<%- include('header') %>
+<h2>Work Order Baru</h2>
+<% if (error) { %><div class="alert"><%= error %></div><% } %>
+<div class="card">
+  <form class="form-grid" action="/production/work-orders" method="post">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label><span>Racikan</span>
+      <select name="formula_id" required>
+        <option value="">Pilih racikan</option>
+        <% formulas.forEach(f => { %>
+          <option value="<%= f.id %>" <%= formula && formula.formula.id===f.id ? 'selected':'' %>><%= f.name %> (v<%= f.version %>) <%= f.is_active?'[aktif]':'' %></option>
+        <% }) %>
+      </select>
+    </label>
+    <label><span>Target jumlah botol jadi</span><input type="number" min="1" step="1" name="target_qty" value="<%= targetQty %>" required></label>
+    <label class="one"><span>Catatan</span><input type="text" name="note" value="<%= note %>" maxlength="500"></label>
+    <button type="submit">Buat work order</button>
+  </form>
+</div>
+<% if (formula) { %>
+<div class="card">
+  <h3>Rincian racikan</h3>
+  <p class="muted"><%= formula.formula.name %> v<%= formula.formula.version %> - Target <%= formula.formula.target_brand %> <%= formula.formula.target_name %> <%= formula.formula.target_size %>ml</p>
+  <table class="stack mt">
+    <thead><tr><th>Bahan</th><th class="num">%</th><th class="num">ml (est.)</th><th class="num">Butuh (unit produk)</th><th class="num">Stok saat ini</th></tr></thead>
+    <tbody>
+      <% const totalMl = targetQty * formula.formula.target_size; formula.items.forEach(it => { const ml = totalMl * Number(it.pct)/100; const need = Math.max(1, Math.ceil(ml / it.size_ml)); %>
+        <tr>
+          <td data-label="Bahan"><%= it.brand %> <%= it.name %> <%= it.size_ml %>ml</td>
+          <td data-label="%" class="num"><%= Number(it.pct).toFixed(3) %></td>
+          <td data-label="ml (est.)" class="num"><%= ml.toFixed(2) %></td>
+          <td data-label="Butuh (unit produk)" class="num"><%= need %></td>
+          <td data-label="Stok saat ini" class="num"><%= it.stock %></td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</div>
+<% } %>
+<%- include('footer') %>

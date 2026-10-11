@@ -3,33 +3,37 @@
 <% const sisa = product.stock * product.size_ml - product.ml_used %>
 <h2>Ubah produk</h2>
 <% if (error) { %>
-<div class="alert" role="alert"><%= error %></div>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
 <% } %>
 
 <div class="card">
   <form method="post" action="/products/<%= product.id %>/edit">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <div class="form-grid">
-      <input name="sku" aria-label="SKU" placeholder="SKU" value="<%= product.sku %>" required>
-      <input name="brand" aria-label="Brand" placeholder="Brand" value="<%= product.brand %>" required>
-      <input name="name" aria-label="Nama" placeholder="Nama" value="<%= product.name %>" required>
-      <select name="category" aria-label="Kategori">
+      <label><span>SKU</span><input name="sku" value="<%= product.sku %>" required></label>
+      <label><span>Brand</span><input name="brand" value="<%= product.brand %>" required></label>
+      <label><span>Nama</span><input name="name" value="<%= product.name %>" required></label>
+      <label><span>Kategori</span><select name="category">
         <% categories.forEach(c => { %>
         <option<%= product.category === c ? ' selected' : '' %>><%= c %></option>
         <% }) %>
-      </select>
-      <input name="size_ml" type="number" aria-label="Ukuran dalam mililiter" inputmode="numeric" min="1" placeholder="Ukuran (ml)" value="<%= product.size_ml %>" required>
-      <input name="cost_price" type="number" aria-label="Harga beli" inputmode="numeric" min="0" placeholder="Harga beli" value="<%= product.cost_price %>" required>
-      <input name="sell_price" type="number" aria-label="Harga jual" inputmode="numeric" min="0" placeholder="Harga jual" value="<%= product.sell_price %>" required>
-      <input name="min_stock" type="number" aria-label="Stok minimum" inputmode="numeric" min="0" placeholder="Stok minimum" value="<%= product.min_stock %>" required>
-      <input name="batch_no" aria-label="Nomor batch" placeholder="Nomor batch (opsional)" value="<%= product.batch_no || '' %>">
-      <input name="expiry_date" type="date" aria-label="Tanggal kedaluwarsa" value="<%= exp %>">
-      <select name="parent_product_id" aria-label="Produk induk">
+      </select></label>
+      <label><span>Ukuran (ml)</span><input name="size_ml" type="number" inputmode="numeric" min="1" value="<%= product.size_ml %>" required></label>
+      <label><span>Harga beli (Rp)</span><input name="cost_price" type="number" inputmode="numeric" min="0" value="<%= product.cost_price %>" required></label>
+      <label><span>Harga jual (Retail, Rp)</span><input name="sell_price" type="number" inputmode="numeric" min="0" value="<%= product.sell_price %>" required></label>
+      <label><span>Harga reseller (Rp)</span><input name="price_reseller" type="number" inputmode="numeric" min="0" value="<%= product.price_reseller || 0 %>"></label>
+      <label><span>Harga agen (Rp)</span><input name="price_agen" type="number" inputmode="numeric" min="0" value="<%= product.price_agen || 0 %>"></label>
+      <label><span>Harga grosir (Rp)</span><input name="price_grosir" type="number" inputmode="numeric" min="0" value="<%= product.price_grosir || 0 %>"></label>
+      <label><span>Stok minimum</span><input name="min_stock" type="number" inputmode="numeric" min="0" value="<%= product.min_stock %>" required></label>
+      <label><span>QC required</span><input type="checkbox" name="qc_required" <%= product.qc_required ? 'checked' : '' %> style="width:auto;min-height:unset"></label>
+      <label><span>Nomor batch (opsional)</span><input name="batch_no" value="<%= product.batch_no || '' %>"></label>
+      <label><span>Tanggal kedaluwarsa (opsional)</span><input name="expiry_date" type="date" value="<%= exp %>"></label>
+      <label><span>Produk induk</span><select name="parent_product_id">
         <option value="">Tanpa induk</option>
         <% parents.forEach(p => { %>
         <option value="<%= p.id %>"<%= String(product.parent_product_id) === String(p.id) ? ' selected' : '' %>><%= p.brand %> <%= p.name %> <%= p.size_ml %>ml</option>
         <% }) %>
-      </select>
+      </select></label>
     </div>
     <div class="actions-row">
       <button>Simpan</button>

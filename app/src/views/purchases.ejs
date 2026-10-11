@@ -20,6 +20,7 @@
         <th scope="col">Waktu</th>
         <th scope="col">Supplier</th>
         <th scope="col">Pencatat</th>
+        <th scope="col">Bayar</th>
         <th scope="col" class="num">Item</th>
         <th scope="col" class="num">Total</th>
       </tr>
@@ -31,6 +32,7 @@
         <td data-label="Waktu" class="muted"><%= new Date(p.created_at).toLocaleString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) %></td>
         <td data-label="Supplier"><%= p.supplier || '-' %></td>
         <td data-label="Pencatat"><%= p.username || '-' %></td>
+        <td data-label="Bayar"><%= paymentLabel[p.payment_method] || p.payment_method %><% if (p.payment_method === 'tempo' && !p.paid_at) { %> <span class="warn">belum lunas</span><% } %></td>
         <td data-label="Item" class="num"><%= p.items %></td>
         <td data-label="Total" class="num"><%= rp(p.total) %></td>
       </tr>

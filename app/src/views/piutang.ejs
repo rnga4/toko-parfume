@@ -1,0 +1,58 @@
+<%- include('header') %>
+<h2>Piutang Pelanggan</h2>
+<% if (flash) { %>
+<div class="flash" role="status"><%= flash %></div>
+<% } %>
+
+<div class="grid grid-2">
+  <div class="card stat stat-lead"><small>Total Piutang Belum Lunas</small><h3 class="num warn"><%= rp(outstanding) %></h3></div>
+  <div class="card stat"><small>Tagihan Belum Lunas</small><h3 class="num <%= outstandingCount ? 'warn' : '' %>"><%= outstandingCount %></h3></div>
+</div>
+
+<div class="card mt">
+  <h3>Penjualan tempo</h3>
+  <p class="state">Penjualan dengan metode bayar tempo yang belum dibayar pelanggan. Setelah uang diterima, tekan "Tandai lunas".</p>
+  <div class="toolbar">
+    <% if (status === 'belum') { %>
+    <a class="btn" href="/piutang?status=lunas">Tampilkan yang lunas</a>
+    <% } else { %>
+    <a class="btn" href="/piutang">Tampilkan yang belum lunas</a>
+    <% } %>
+  </div>
+  <% if (!piutang.length) { %>
+  <p class="state"><%= status === 'belum' ? 'Tidak ada piutang tempo yang belum lunas. Semua tagihan pelanggan sudah diterima.' : 'Belum ada penjualan tempo yang ditandai lunas.' %></p>
+  <% } else { %>
+  <table class="stack">
+    <thead>
+      <tr>
+        <th scope="col">Invoice</th>
+        <th scope="col">Tanggal</th>
+        <th scope="col">Pelanggan</th>
+        <th scope="col">Jatuh tempo</th>
+        <th scope="col" class="num">Total</th>
+        <% if (status === 'belum') { %><th scope="col" aria-label="Aksi"></th><% } %>
+      </tr>
+    </thead>
+    <tbody>
+      <% piutang.forEach(s => { %>
+      <tr>
+        <td data-label="Invoice"><a href="/sales/<%= s.id %>"><%= s.invoice_no %></a></td>
+        <td data-label="Tanggal" class="muted"><%= new Date(s.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: '2-digit', year: 'numeric' }) %></td>
+        <td data-label="Pelanggan"><%= s.customer || '-' %><% if (s.phone) { %><br><span class="muted"><%= s.phone %></span><% } %></td>
+        <td data-label="Jatuh tempo"><% if (s.due_date) { %><%= new Date(s.due_date).toLocaleDateString('id-ID') %><% if (status === 'belum' && new Date(s.due_date) < new Date(new Date().toDateString())) { %> <span class="warn">lewat</span><% } %><% } else { %>-<% } %></td>
+        <td data-label="Total" class="num"><%= rp(s.total) %></td>
+        <% if (status === 'belum') { %>
+        <td class="actions">
+          <form method="post" action="/piutang/<%= s.id %>/lunas" onsubmit="return confirm('Tandai piutang <%= s.invoice_no %> sebagai lunas?')">
+            <input type="hidden" name="_csrf" value="<%= csrf %>">
+            <button type="submit">Tandai lunas</button>
+          </form>
+        </td>
+        <% } %>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <% } %>
+</div>
+<%- include('footer') %>

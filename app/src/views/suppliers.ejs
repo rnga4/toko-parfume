@@ -1,7 +1,7 @@
 <%- include('header') %>
 <h2>Supplier</h2>
 <% if (error) { %>
-<div class="alert" role="alert"><%= error %></div>
+<div class="alert" role="alert" tabindex="-1"><%= error %></div>
 <% } %>
 
 <div class="card">
@@ -9,9 +9,9 @@
   <form method="post" action="/suppliers">
     <input type="hidden" name="_csrf" value="<%= csrf %>">
     <div class="form-grid">
-      <input name="name" aria-label="Nama supplier" placeholder="Nama" value="<%= form.name || '' %>" required>
-      <input name="phone" aria-label="Telepon supplier" placeholder="Telepon" value="<%= form.phone || '' %>">
-      <input name="address" aria-label="Alamat supplier" placeholder="Alamat" value="<%= form.address || '' %>">
+      <label><span>Nama</span><input name="name" value="<%= form.name || '' %>" required></label>
+      <label><span>Telepon</span><input name="phone" value="<%= form.phone || '' %>"></label>
+      <label><span>Alamat</span><input name="address" value="<%= form.address || '' %>"></label>
       <button type="submit">Tambah</button>
     </div>
   </form>

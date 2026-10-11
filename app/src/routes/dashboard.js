@@ -8,7 +8,8 @@ const router = express.Router();
 router.use(requireAuth);
 
 router.get('/', wrap(async (req, res) => {
-  const [p, low, s, exp] = await Promise.all([
+  const isAdmin = req.user.role === 'admin';
+  const [p, low, s, exp, laba, terlaris] = await Promise.all([
     pool.query('SELECT COUNT(*)::int AS c FROM products WHERE is_active'),
     pool.query('SELECT * FROM products WHERE is_active AND stock <= min_stock ORDER BY stock'),
     pool.query("SELECT COALESCE(SUM(total),0)::bigint AS t FROM sales WHERE created_at::date = CURRENT_DATE"),
@@ -18,12 +19,35 @@ router.get('/', wrap(async (req, res) => {
          FROM products
         WHERE is_active AND expiry_date IS NOT NULL AND expiry_date <= CURRENT_DATE + 30
         ORDER BY expiry_date, brand, name`
-    )
+    ),
+    isAdmin
+      ? pool.query(
+          `SELECT COALESCE(SUM((si.price - COALESCE(si.hpp, 0)) * si.qty), 0)::bigint AS profit
+             FROM sale_items si JOIN sales s ON s.id = si.sale_id
+            WHERE s.created_at::date = CURRENT_DATE`
+        )
+      : Promise.resolve({ rows: [{ profit: 0 }] }),
+    isAdmin
+      ? pool.query(
+          `SELECT p.brand, p.name, p.size_ml, SUM(si.qty)::int AS qty,
+                  SUM(si.price * si.qty)::bigint AS omzet
+             FROM sale_items si
+             JOIN sales s ON s.id = si.sale_id
+             JOIN products p ON p.id = si.product_id
+            WHERE s.created_at >= date_trunc('month', CURRENT_DATE)
+            GROUP BY p.id
+            ORDER BY qty DESC, omzet DESC, p.name
+            LIMIT 3`
+        )
+      : Promise.resolve({ rows: [] })
   ]);
   res.render('dashboard', {
     totalProduk: p.rows[0].c,
     lowStock: low.rows,
-    omzet: s.rows[0].t,
+    omzet: Number(s.rows[0].t),
+    laba: Number(laba.rows[0].profit),
+    terlaris: terlaris.rows,
+    isAdmin,
     expiring: exp.rows
   });
 }));

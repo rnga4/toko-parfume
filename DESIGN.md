@@ -21,13 +21,13 @@ Presisi. Rapi, terukur, konsisten. Terasa seperti alat ukur, bukan spreadsheet g
 | Batas field | `#8a8a8a` | 3.45:1 terhadap putih, di atas syarat 3:1 untuk batas komponen. |
 | Aksen bahaya | `#c0392b` | Hanya untuk status bahaya (stok menipis) dan aksi destruktif (Hapus). 5.44:1 terhadap putih. |
 
-Dua warna inti (`#1f1f2e`, `#c0392b`) plus netral, sesuai batas R-29. Aksen tidak muncul di luar status bahaya dan aksi destruktif.
+Dua warna inti (`#1f1f2e`, `#c0392b`) plus netral, sesuai batas R-29. Aksen tidak muncul di luar status bahaya dan aksi destruktif. Nilai di atas adalah palet tema terang; tema lain mencantumkan nilainya masing-masing di bagian Tema.
 
 ## Elevasi (R-12)
 
-Satu nilai bayangan saja: `0 1px 3px #0001`, hanya pada `.card`. Alasannya memisahkan permukaan kartu dari kanvas `#f5f5f7` supaya kartu terbaca sebagai lembar data, bukan sebagai lubang di latar. Tidak ada bayangan kedua: tombol, field, tabel, dan nav datar, sehingga elevasi tetap berarti hanya untuk kartu.
+Bayangan diambil dari sistem `template tema.css` user (token `--shadow-sm`/`--shadow-md`, radius `--radius-lg` untuk kartu). Tolok ukur tetap satu tingkat: `.card` pakai `--shadow-md` dan rambut `1px var(--line)`, sehingga kartu terbaca sebagai lembar data di atas kanvas. Tombol memakai `--shadow-sm` sebagai dudukan; saat hover desktop naik 1px dengan `--shadow-md`, saat ditekan bayangan hilang dan turun 1px. Field, tabel, dan nav tetap datar.
 
-Rambut pemisah `#eee` antar baris tabel bersifat dekoratif, bukan penanda status atau batas kontrol, jadi tidak dibatasi syarat kontras 3:1.
+Rambut pemisah antar baris tabel bersifat dekoratif, bukan penanda status atau batas kontrol, jadi tidak dibatasi syarat kontras 3:1. Header tabel memakai label kecil huruf kapital warna redup, diambil dari gaya tabel template.
 
 ## Tipografi
 
@@ -37,9 +37,18 @@ Alasan (R-31): huruf native OS, tanpa unduhan, tampil sama dengan yang sudah ter
 
 ## Tema
 
-Terang tetap.
+Sembilan tema dalam satu sistem variabel CSS: terang (default), `dark`, `telegram`, `sakura`, `bamboo`, `cyberpunk`, `mingyu`, `ocean`, `retrolight`. Tujuh tema terakhir diturunkan dari sistem token OKLCH pada `template tema.css` (milik user) kemudian dipadatkan ke skema variabel aplikasi ini, bukan dipakai sebagai file utuh.
 
-Alasan (R-21): ERP dipakai siang di dalam toko dengan pencahayaan terang, dan layarnya sering difoto untuk dibagikan. Tidak ada alur kerja yang butuh tema gelap. `color-scheme: light` diset agar browser tidak membalik warna secara otomatis.
+- Semua warna didefinisikan sebagai variabel CSS di `:root`; tiap tema menimpanya di `:root[data-theme="..."]`.
+- Konversi OKLCH ke hex dihitung dulu, lalu tiap pasangan warna dicek kontrasnya sebelum dipakai: teks di kanvas, teks redup, teks tombol di aksen, teks tombol bahaya, teks peringatan, teks/galat ringkasan, tautan, teks nav, dan batas field. Semua >= 4.5:1 untuk teks dan >= 3:1 untuk batas. Warna template asli yang gagal (mis. aksen `dark` versi template hanya 3.74:1 untuk tombol) digelapkan/ditepatkan sampai lolos.
+- Per tema, nav memakai kulit tersendiri: tema terang dipadukan nav gelap bernuansa foregound, tema gelap memakai permukaan, jadi `nav-text` selalu kontras terhadap `nav`.
+- Pilihan tema disimpan di `localStorage` (`tema`) dan dipakai semua halaman melalui `data-theme` di `<html>`. Skrip kecil di `<head>` membaca simpanan atau `prefers-color-scheme` sebelum halaman dicat supaya tidak ada kedipan warna (anti-flash); `meta theme-color` dan `color-scheme` ikut berganti.
+- Pemilih tema berupa `details`/`summary` native di nav: daftar radio bernama `tema`, tiap opsi diberi titik warna tema. Tanpa inisial dialog: nav di-hover, daftar isi tema, pilihan langsung dipakai dan disimpan. Halaman tanpa nav (login) tidak menampilkan pemilih, tapi tema tersimpan tetap diterapkan.
+- Fokus setiap pemilih tema memakai radio native (bisa dipakai dengan panah), dan Escape menutup daftar.
+- `struk.ejs` sengaja dibiarkan terang karena dicetak; hasil cetak harus tetap terang.
+- Tema tidak menambahkan transisi: pergantian instan, dan `prefers-reduced-motion` tetap mematikan seluruh animasi.
+
+Catatan analisis `template tema.css`: yang dipakai hanya sistem token tema plus konsep pemilih tema. Komponen tampilan lain (hero, chat, toast, modal, autocomplete, tombol nametag, font Google, `user-select:none` pada body) tidak diimpor: komponen itu untuk halaman pemasaran PL-KOMATSU, bukan layar kerja ERP, font Google tidak bisa turun di jaringan lokal, dan melarang menyalin teks akan mengganggu pengguna yang menyalin kode produk/angka.
 
 ## Dials
 
@@ -47,12 +56,17 @@ ENERGY 2 / RHYTHM 2 / MOTION 2
 
 ## Motion (R-19)
 
-Tujuan: konfirmasi aksi dan perpindahan fokus saja.
+Tujuan: konfirmasi aksi, perpindahan fokus, dan bimbingan mata ke apa yang berubah. Gerak hanya micro-interaction bertujuan; layar ini dibuka berulang kali oleh orang yang sedang bekerja, jadi tidak ada gerak yang menunggu, berputar, atau memaksa konten muncul mengantre.
 
 - Transisi `background-color`, `color`, dan `outline-color` pada kontrol interaktif, 150ms.
-- Pada `:active`, tombol menggelapkan diri sebagai umpan balik saat ditekan.
-- Tanpa loop, tanpa animasi dekoratif, tanpa gerak saat menggulir. Scroll-reveal sengaja ditiadakan: layar ini dibuka berulang kali oleh orang yang sedang bekerja, jadi konten harus langsung utuh begitu halaman muncul, bukan muncul satu per satu.
-- Murni CSS. Aplikasi ini tidak punya klien JS.
+- Pada `:hover`, kontrol dan tautan sedikit mencerah; pada `:active`, tombol menggelap sekaligus turun 1px sebagai umpan balik saat ditekan.
+- Sidebar menyelinap masuk dengan `transform` 200ms; lapisan gelap memudar 200ms. Saat tertutup, sidebar keluar dari alur Tab (`visibility:hidden`) supaya tidak bisa difokuskan dari layar.
+- Ringkasan galat (`.alert`) dan pesan hasil (`.flash`) memudar masuk 250ms sekali pakai, lalu diam.
+- Skip link turun ke layar saat `:focus-visible` (150ms), supaya pengguna keyboard melihat kemana kursor pindah.
+- Baris tabel desktop sedikit berhiaskan warna saat hover untuk membantu pemindaian; di bawah 768px baris sudah berbentuk kartu, jadi tidak berlaku.
+- Tanpa loop, tanpa bounce, tanpa animasi dekoratif, tanpa gerak saat menggulir. Scroll-reveal sengaja ditiadakan: konten harus utuh begitu halaman muncul, bukan muncul satu per satu.
+- `prefers-reduced-motion` mematikan seluruh animasi dan transisi.
+- Klien hanya menjalankan empat hal kecil: memindahkan fokus ke ringkasan galat form, sinkronisasi `aria-expanded` menu, menutup menu dengan Escape, dan menerapkan pilihan tema dari daftar radio. Tidak ada kerangka atau pustaka klien.
 
 ## Rhythm (R-05, dial RHYTHM 2)
 
@@ -72,7 +86,7 @@ Setiap tampilan data punya tiga keadaan. Kosong menyebabkan sebab dan satu aksi.
 
 ## Navigasi dan peran (R-24)
 
-Navigasi memakai satu bar atas tipis setinggi 52px di seluruh ukuran layar: tombol Menu (☰, berlabel, bukan ikon kosong) di kiri dan nama aplikasi di sebelahnya. Menu adalah checkbox yang dihidupkan lewat `<details>`-style label: satu tekan membuka sidebar kiri setinggi layar, lebar `min(82vw, 300px)`, memuat Dashboard, Kasir, Riwayat, Produk, lalu Pembelian, Supplier, Retur, Decant, Opname, Akun khusus admin, dan Keluar. Di luar sidebar ada lapisan gelap yang kalau diklik menutup sidebar, tombol berubah dari ☰ jadi ✕ selama terbuka, dan semua tautan tetap bisa dicapai dengan Tab tanpa satu baris JavaScript pun. Tanpa JS, Escape tidak menutup sidebar; tekan Menu atau lapisan gelap sebagai gantinya.
+Navigasi memakai satu bar atas tipis setinggi 52px di seluruh ukuran layar: tombol Menu (☰, berlabel, bukan ikon kosong) di kiri dan nama aplikasi di sebelahnya. Menu adalah checkbox yang dihidupkan lewat `<details>`-style label: satu tekan membuka sidebar kiri setinggi layar, lebar `min(82vw, 300px)`, memuat Dashboard, Kasir, Riwayat, Produk, lalu Pembelian, Supplier, Retur, Decant, Opname, Akun khusus admin, dan Keluar. Di luar sidebar ada lapisan gelap yang kalau diklik menutup sidebar, tombol berubah dari ☰ jadi ✕ selama terbuka, dan semua tautan tetap bisa dicapai dengan Tab. `aria-expanded` pada toggle diisi ulang ketika menu dibuka atau ditutup. Escape menutup sidebar yang sedang terbuka.
 
 Pilihan sidebar kiri, bukan baris horizontal yang meluber di HP maupun bar bawah, alasannya konsistensi satu pola untuk semua layar dan ruang konten yang utuh di kedua sisi. Kasir sengaja tidak melihat enam menu admin. Bukan karena disembunyikan, melainkan karena pekerjaannya tidak sampai ke sana, dan setiap menu tambahan adalah peluang salah tekan saat toko ramai.
 
@@ -86,11 +100,11 @@ Diskon disimpan sebagai rupiah bulat, bukan persen. Kasir menghitung "kurangi se
 
 Total dihitung dua kali: sekali di layar saat tombol "Hitung total" ditekan, dan sekali lagi di dalam transaksi saat "Bayar" ditekan. Angka di layar bisa basi kalau dua orang mengerjakan stok yang sama, jadi keputusan pembayaran selalu memakai angka yang dihitung ulang dari database di dalam satu transaksi.
 
-## Keranjang tanpa JavaScript
+## Keranjang tanpa kerangka JavaScript
 
-Aplikasi ini tidak memuat satu baris JS pun di klien. Keranjang disimpan sebagai baris `draft_items`, dikunci per akun, dan setiap aksi adalah form POST biasa. Tombol `formaction` membedakan "Hitung total" dan "Bayar" pada form yang sama. Konsekuensinya setiap tekan menghasilkan penukaran halaman penuh; harga itu diterima mengingat layar ini dibuka di jaringan toko yang sering tidak stabil.
+Keranjang tidak memuat kerangka atau pustaka klien. Keranjang disimpan sebagai baris `draft_items`, dikunci per akun, dan setiap aksi adalah form POST biasa. Tombol `formaction` membedakan "Hitung total" dan "Bayar" pada form yang sama. Konsekuensinya setiap tekan menghasilkan penukaran halaman penuh; harga itu diterima mengingat layar ini dibuka di jaringan toko yang sering tidak stabil.
 
-Jumlah diubah lewat tombol minus dan plus, bukan angka yang diketik. Pilihan ini menjaga kontrol tetap 44px di HP dan menghapus satu jenis kesalahan isi: kasir tidak bisa menulis jumlah negatif atau pecahan.
+Jumlah di keranjang kasir dan daftar Pembelian diubah lewat tombol minus dan plus, bukan angka yang diketik. Pilihan ini menjaga kontrol tetap 44px di HP dan menghapus satu jenis kesalahan isi: kasir tidak bisa menulis jumlah negatif atau pecahan. Form tambah barang ke keranjang dan tambah baris pembelian tetap memakai field angka untuk jumlah awal.
 
 ## Pembelian
 
@@ -138,6 +152,6 @@ Pembatasan percobaan berjalan di memori proses. Kalau aplikasi nanti dijalankan 
 
 ## Konten (R-38)
 
-`db/init.sql` menanam dua baris seed (Dior Sauvage, YSL Libre) di database produksi. Database masih berstatus test. Sebelum go-live, baris seed diganti data nyata atau dilabeli sebagai fixture.
+`db/init.sql` tidak lagi menanam baris produk. Instalasi baru mulai dengan tabel produk kosong dan diisi lewat halaman Produk. Database lama yang pernah memuat dua baris seed (Dior Sauvage, YSL Libre) perlu membersihkan baris itu sendiri, karena bukan data toko.
 
 `migrate.js` menanam akun `admin` / `admin123` hanya saat tabel `users` masih kosong, lalu mencetak peringatan ke log container. Kata sandi ini wajib diganti sebelum aplikasi dibuka lewat terowongan Cloudflare.
